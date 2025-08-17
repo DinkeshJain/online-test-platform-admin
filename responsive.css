@@ -1,6 +1,132 @@
-/* Responsive Design for Online Test Platform */
-/* Tailwind base, components, and utilities should be included via the compiled Tailwind CSS file, not as @tailwind directives in this CSS file. */
-/* Base responsive utilities */
+@reference 'tailwindcss';
+@reference overflow-x-auto;
+@reference min-w-full;
+@reference px-2;
+@reference py-2;
+@reference md:px-4;
+@reference md:py-3;
+@reference text-xs;
+@reference md:text-sm;
+@reference flex;
+@reference flex-col;
+@reference lg:flex-row;
+@reference min-h-screen;
+@reference flex-1;
+@reference p-4;
+@reference md:p-6;
+@reference w-full;
+@reference lg:w-80;
+@reference bg-white;
+@reference border-t;
+@reference lg:border-t-0;
+@reference lg:border-l;
+@reference border-gray-200;
+@reference space-y-4;
+@reference md:space-y-6;
+@reference space-y-2;
+@reference md:space-y-3;
+@reference items-start;
+@reference gap-2;
+@reference md:gap-3;
+@reference p-3;
+@reference md:p-4;
+@reference border;
+@reference rounded-lg;
+@reference cursor-pointer;
+@reference transition-colors;
+@reference hover:bg-gray-50;
+@reference flex-row;
+@reference gap-2;
+@reference pt-4;
+@reference md:pt-6;
+@reference flex-1;
+@reference grid;
+@reference grid-cols-5;
+@reference sm:grid-cols-6;
+@reference md:grid-cols-5;
+@reference max-h-64;
+@reference md:max-h-96;
+@reference overflow-y-auto;
+@reference h-8;
+@reference w-8;
+@reference md:h-10;
+@reference md:w-10;
+@reference p-0;
+@reference font-medium;
+@reference flex-wrap;
+@reference items-center;
+@reference gap-4;
+@reference mb-6;
+@reference md:mb-8;
+@reference rounded-lg;
+@reference shadow-sm;
+@reference p-6;
+@reference text-xl;
+@reference sm:text-2xl;
+@reference lg:text-3xl;
+@reference font-bold;
+@reference text-gray-900;
+@reference leading-tight;
+@reference mb-2;
+@reference grid-cols-1;
+@reference sm:grid-cols-2;
+@reference lg:grid-cols-3;
+@reference xl:grid-cols-4;
+@reference gap-6;
+@reference hover:shadow-md;
+@reference transition-shadow;
+@reference max-w-7xl;
+@reference mx-auto;
+@reference px-4;
+@reference sm:px-6;
+@reference lg:px-8;
+@reference py-4;
+@reference md:py-8;
+@reference text-2xl;
+@reference md:text-3xl;
+@reference gap-4;
+@reference fixed;
+@reference inset-0;
+@reference bg-black;
+@reference items-center;
+@reference justify-center;
+@reference z-50;
+@reference max-w-md;
+@reference md:max-w-lg;
+@reference lg:max-w-xl;
+@reference shadow-xl;
+@reference border-b;
+@reference border-t;
+@reference flex-col;
+@reference sm:flex-row;
+@reference gap-4;
+@reference sm:justify-end;
+@reference hidden;
+@reference md:block;
+@reference block;
+@reference md:hidden;
+@reference lg:block;
+@reference lg:hidden;
+@reference min-h-[44px];
+@reference space-y-8;
+@reference p-8;
+@reference m-8;
+@reference text-center;
+@reference md:text-left;
+@reference text-left;
+@reference md:text-center;
+@reference flex-col-reverse;
+@reference gap-1;
+@reference gap-3;
+@reference gap-8;
+@reference page-break-after;
+@reference page-break-inside;
+@reference border-2;
+@reference border-gray-800;
+@reference bg-gray-800;
+@reference border-gray-700;
+@reference text-white;
+
 @media (max-width: 640px) {
   /* Mobile styles */
   .container {
@@ -371,20 +497,21 @@
 }
 
 /* Dashboard responsive */
+
 .dashboard-header {
-  @apply mb-6 md:mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6;
+  @apply mb-8 bg-white rounded-xl shadow-lg border border-gray-100 p-6 flex flex-col gap-2 items-start;
 }
 
 .dashboard-title {
-  @apply text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-2;
+  @apply text-2xl lg:text-3xl font-extrabold text-gray-900 leading-tight mb-2 tracking-tight;
 }
 
 .dashboard-grid {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8;
 }
 
 .dashboard-card {
-  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow;
+  @apply bg-white rounded-xl shadow-md border border-gray-100 p-6 flex flex-col gap-3 hover:shadow-lg transition-shadow;
 }
 
 /* Admin panel responsive */
@@ -406,7 +533,8 @@
 
 /* Modal responsive */
 .modal-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50;
+  @apply fixed inset-0 bg-black flex items-center justify-center p-4 z-50;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
