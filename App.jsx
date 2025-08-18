@@ -13,7 +13,7 @@ import CourseManager from './pages/CourseManager';
 import Reports from './pages/Reports';
 import DataMaintenance from './pages/DataMaintenance';
 import './App.css';
-import './responsive.css';
+import './index.css';
 
 function AdminApp() {
   return (

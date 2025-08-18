@@ -1,3 +1,688 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@reference 'tailwindcss';
+/* @reference overflow-x-auto;
+@reference min-w-full;
+@reference px-2;
+@reference py-2;
+@reference md:px-4;
+@reference md:py-3;
+@reference text-xs;
+@reference md:text-sm;
+@reference flex;
+@reference flex-col;
+@reference lg:flex-row;
+@reference min-h-screen;
+@reference flex-1;
+@reference p-4;
+@reference md:p-6;
+@reference w-full;
+@reference lg:w-80;
+@reference bg-white;
+@reference border-t;
+@reference lg:border-t-0;
+@reference lg:border-l;
+@reference border-gray-200;
+@reference space-y-4;
+@reference md:space-y-6;
+@reference space-y-2;
+@reference md:space-y-3;
+@reference items-start;
+@reference gap-2;
+@reference md:gap-3;
+@reference p-3;
+@reference md:p-4;
+@reference border;
+@reference rounded-lg;
+@reference cursor-pointer;
+@reference transition-colors;
+@reference hover:bg-gray-50;
+@reference flex-row;
+@reference gap-2;
+@reference pt-4;
+@reference md:pt-6;
+@reference flex-1;
+@reference grid;
+@reference grid-cols-5;
+@reference sm:grid-cols-6;
+@reference md:grid-cols-5;
+@reference max-h-64;
+@reference md:max-h-96;
+@reference overflow-y-auto;
+@reference h-8;
+@reference w-8;
+@reference md:h-10;
+@reference md:w-10;
+@reference p-0;
+@reference font-medium;
+@reference flex-wrap;
+@reference items-center;
+@reference gap-4;
+@reference mb-6;
+@reference md:mb-8;
+@reference rounded-lg;
+@reference shadow-sm;
+@reference p-6;
+@reference text-xl;
+@reference sm:text-2xl;
+@reference lg:text-3xl;
+@reference font-bold;
+@reference text-gray-900;
+@reference leading-tight;
+@reference mb-2;
+@reference grid-cols-1;
+@reference sm:grid-cols-2;
+@reference lg:grid-cols-3;
+@reference xl:grid-cols-4;
+@reference gap-6;
+@reference hover:shadow-md;
+@reference transition-shadow;
+@reference max-w-7xl;
+@reference mx-auto;
+@reference px-4;
+@reference sm:px-6;
+@reference lg:px-8;
+@reference py-4;
+@reference md:py-8;
+@reference text-2xl;
+@reference md:text-3xl;
+@reference gap-4;
+@reference fixed;
+@reference inset-0;
+@reference bg-black;
+@reference items-center;
+@reference justify-center;
+@reference z-50;
+@reference max-w-md;
+@reference md:max-w-lg;
+@reference lg:max-w-xl;
+@reference shadow-xl;
+@reference border-b;
+@reference border-t;
+@reference flex-col;
+@reference sm:flex-row;
+@reference gap-4;
+@reference sm:justify-end;
+@reference hidden;
+@reference md:block;
+@reference block;
+@reference md:hidden;
+@reference lg:block;
+@reference lg:hidden;
+@reference min-h-[44px];
+@reference space-y-8;
+@reference p-8;
+@reference m-8;
+@reference text-center;
+@reference md:text-left;
+@reference text-left;
+@reference md:text-center;
+@reference flex-col-reverse;
+@reference gap-1;
+@reference gap-3;
+@reference gap-8; */
+@reference page-break-after;
+@reference page-break-inside;
+/* @reference border-2;
+@reference border-gray-800;
+@reference bg-gray-800;
+@reference border-gray-700;
+@reference text-white; */
+
+@media (max-width: 640px) {
+
+    /* Mobile styles */
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .text-responsive {
+        font-size: 0.875rem;
+    }
+
+    .text-responsive-lg {
+        font-size: 1.125rem;
+    }
+
+    .text-responsive-xl {
+        font-size: 1.25rem;
+    }
+
+    .text-responsive-2xl {
+        font-size: 1.5rem;
+    }
+
+    .text-responsive-3xl {
+        font-size: 1.875rem;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+
+    /* Tablet styles */
+    .container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .text-responsive {
+        font-size: 1rem;
+    }
+
+    .text-responsive-lg {
+        font-size: 1.25rem;
+    }
+
+    .text-responsive-xl {
+        font-size: 1.5rem;
+    }
+
+    .text-responsive-2xl {
+        font-size: 1.875rem;
+    }
+
+    .text-responsive-3xl {
+        font-size: 2.25rem;
+    }
+}
+
+@media (min-width: 1025px) {
+
+    /* Desktop styles */
+    .text-responsive {
+        font-size: 1rem;
+    }
+
+    .text-responsive-lg {
+        font-size: 1.125rem;
+    }
+
+    .text-responsive-xl {
+        font-size: 1.25rem;
+    }
+
+    .text-responsive-2xl {
+        font-size: 1.5rem;
+    }
+
+    .text-responsive-3xl {
+        font-size: 1.875rem;
+    }
+}
+
+/* Navigation responsive */
+.nav-responsive {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+
+@media (min-width: 768px) {
+    .nav-responsive {
+        flex-direction: row;
+        align-items: center;
+        gap: 1.5rem;
+    }
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .nav-brand {
+        gap: 1rem;
+    }
+}
+
+.nav-brand-text {
+    font-size: 1.125rem;
+    font-weight: bold;
+}
+
+@media (min-width: 768px) {
+    .nav-brand-text {
+        font-size: 1.25rem;
+    }
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .nav-menu {
+        flex-direction: row;
+        gap: 1rem;
+        width: auto;
+    }
+}
+
+.nav-item {
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+@media (min-width: 768px) {
+    .nav-item {
+        font-size: 1rem;
+    }
+}
+
+.nav-item:hover {
+    background-color: #f3f4f6;
+}
+
+/* Card responsive */
+.card-responsive {
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .card-responsive {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .card-responsive {
+        padding: 2rem;
+    }
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .card-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .card-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+    }
+}
+
+.card-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .card-grid-2 {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* Form responsive */
+.form-responsive {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .form-responsive {
+        gap: 1.5rem;
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+@media (min-width: 768px) {
+    .form-input {
+        padding: 1rem 1.25rem;
+    }
+}
+
+.form-input:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.form-button {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: #2563eb;
+    color: #fff;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s;
+    outline: none;
+}
+
+@media (min-width: 768px) {
+    .form-button {
+        width: auto;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+.form-button:hover {
+    background-color: #1d4ed8;
+}
+
+.form-button:focus {
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.form-button-outline {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s;
+    outline: none;
+}
+
+@media (min-width: 768px) {
+    .form-button-outline {
+        width: auto;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+.form-button-outline:hover {
+    background-color: #f3f4f6;
+}
+
+.form-button-outline:focus {
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* Table responsive */
+.table-responsive {
+    @apply overflow-x-auto;
+}
+
+.table-responsive table {
+    @apply min-w-full;
+}
+
+.table-responsive th,
+.table-responsive td {
+    @apply px-2 py-2 md:px-4 md:py-3 text-xs md:text-sm;
+}
+
+/* Test interface responsive */
+.test-container {
+    @apply flex flex-col lg:flex-row min-h-screen;
+}
+
+.test-main {
+    @apply flex-1 p-4 md:p-6;
+}
+
+.test-sidebar {
+    @apply w-full lg:w-80 p-4 md:p-6 bg-white border-t lg:border-t-0 lg:border-l border-gray-200;
+}
+
+.test-question {
+    @apply space-y-4 md:space-y-6;
+}
+
+.test-options {
+    @apply space-y-2 md:space-y-3;
+}
+
+.test-option {
+    @apply flex items-start gap-2 md:gap-3 p-3 md:p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50;
+}
+
+.test-navigation {
+    @apply flex flex-col sm:flex-row gap-2 md:gap-3 pt-4 md:pt-6 border-t;
+}
+
+.test-nav-buttons {
+    @apply flex gap-2 flex-1;
+}
+
+.test-submit-buttons {
+    @apply flex gap-2;
+}
+
+/* Question navigator responsive */
+.question-grid {
+    @apply grid grid-cols-5 sm:grid-cols-6 md:grid-cols-5 gap-2 max-h-64 md:max-h-96 overflow-y-auto;
+}
+
+.question-button {
+    @apply h-8 w-8 md:h-10 md:w-10 p-0 text-xs font-medium;
+}
+
+/* Status bar responsive */
+.status-bar {
+    @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 px-4 py-3;
+}
+
+.status-items {
+    @apply flex flex-wrap items-center gap-2 md:gap-4;
+}
+
+.status-item {
+    @apply flex items-center gap-1 md:gap-2 text-xs md:text-sm;
+}
+
+/* Dashboard responsive */
+
+.dashboard-header {
+    @apply mb-8 bg-white rounded-xl shadow-lg border border-gray-100 p-6 flex flex-col gap-2 items-start;
+}
+
+.dashboard-title {
+    @apply text-2xl lg:text-3xl font-extrabold text-gray-900 leading-tight mb-2 tracking-tight;
+}
+
+.dashboard-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8;
+}
+
+.dashboard-card {
+    @apply bg-white rounded-xl shadow-md border border-gray-100 p-6 flex flex-col gap-3 hover:shadow-lg transition-shadow;
+}
+
+/* Admin panel responsive */
+.admin-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8;
+}
+
+.admin-header {
+    @apply mb-6 md:mb-8;
+}
+
+.admin-title {
+    @apply text-2xl md:text-3xl font-bold text-gray-900 mb-2;
+}
+
+.admin-actions {
+    @apply flex flex-col sm:flex-row gap-2 md:gap-4;
+}
+
+/* Modal responsive */
+.modal-overlay {
+    @apply fixed inset-0 bg-black flex items-center justify-center p-4 z-50;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    @apply w-full max-w-md md:max-w-lg lg:max-w-xl bg-white rounded-lg shadow-xl;
+}
+
+.modal-header {
+    @apply p-4 md:p-6 border-b border-gray-200;
+}
+
+.modal-body {
+    @apply p-4 md:p-6;
+}
+
+.modal-footer {
+    @apply p-4 md:p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end;
+}
+
+/* Utility classes */
+.hide-mobile {
+    @apply hidden md:block;
+}
+
+.show-mobile {
+    @apply block md:hidden;
+}
+
+.hide-tablet {
+    @apply hidden lg:block;
+}
+
+.show-tablet {
+    @apply block lg:hidden;
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 1024px) {
+    .btn-touch {
+        @apply min-h-[44px] min-w-[44px];
+    }
+
+    .input-touch {
+        @apply min-h-[44px];
+    }
+}
+
+/* Responsive spacing */
+.spacing-responsive {
+    @apply space-y-4 md:space-y-6 lg:space-y-8;
+}
+
+.padding-responsive {
+    @apply p-4 md:p-6 lg:p-8;
+}
+
+.margin-responsive {
+    @apply m-4 md:m-6 lg:m-8;
+}
+
+/* Responsive text alignment */
+.text-center-mobile {
+    @apply text-center md:text-left;
+}
+
+.text-left-mobile {
+    @apply text-left md:text-center;
+}
+
+/* Responsive flex direction */
+.flex-responsive {
+    @apply flex flex-col md:flex-row;
+}
+
+.flex-responsive-reverse {
+    @apply flex flex-col-reverse md:flex-row;
+}
+
+/* Responsive grid gaps */
+.gap-responsive {
+    @apply gap-2 md:gap-4 lg:gap-6;
+}
+
+.gap-responsive-sm {
+    @apply gap-1 md:gap-2 lg:gap-3;
+}
+
+.gap-responsive-lg {
+    @apply gap-4 md:gap-6 lg:gap-8;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-break {
+        page-break-after: always;
+    }
+
+    .print-avoid-break {
+        page-break-inside: avoid;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card-responsive {
+        @apply border-2 border-gray-800;
+    }
+
+    .form-input {
+        @apply border-2 border-gray-800;
+    }
+
+    .form-button {
+        @apply border-2 border-gray-800;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark mode responsive adjustments */
+@media (prefers-color-scheme: dark) {
+    .card-responsive {
+        @apply bg-gray-800 border-gray-700;
+    }
+
+    .form-input {
+        @apply bg-gray-800 border-gray-700 text-white;
+    }
+
+    .modal-content {
+        @apply bg-gray-800;
+    }
+}
