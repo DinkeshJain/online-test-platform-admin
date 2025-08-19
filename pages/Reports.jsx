@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Eye, FileText, Users, GraduationCap, ArrowLeft, Home, FileSpreadsheet, BookOpen, Badge, AlertCircle } from 'lucide-react';
+import { Eye, FileText, Users, GraduationCap, ArrowLeft, Home, FileSpreadsheet, BookOpen, Badge, AlertCircle, Edit } from 'lucide-react';
 import AdminNavbar from '../components/AdminNavbar';
 import DataMaintenanceSection from '../components/DataMaintenanceSection';
 import api from '../lib/api';
 import * as XLSX from 'xlsx';
+import toast from 'react-hot-toast';
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ const Reports = () => {
   const [error, setError] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
+  // NEW: States for question marking functionality
+  const [showQuestionMarking, setShowQuestionMarking] = useState(false);
+  const [selectedSubmissionForMarking, setSelectedSubmissionForMarking] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -48,7 +52,6 @@ const Reports = () => {
 
     // Ensure we don't have negative time
     actualTimeSpent = Math.max(0, actualTimeSpent);
-
     const minutes = Math.floor(actualTimeSpent / 60);
     const seconds = actualTimeSpent % 60;
 
@@ -66,7 +69,7 @@ const Reports = () => {
     }
 
     // Check if student failed due to insufficient external marks (less than 35%)
-    const externalPercentage = maxExternalMarks > 0 ? (externalMarks / maxExternalMarks) * 100 : 0;
+    const externalPercentage = (externalMarks / 70) * 100;
     const hasMinimumExternal = externalPercentage >= 35;
 
     // If external marks are insufficient, student fails regardless of total marks
@@ -103,6 +106,135 @@ const Reports = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // NEW: Function to fetch submission details with original question numbers
+  const fetchSubmissionDetails = async (submissionId) => {
+    try {
+      const response = await api.get(`/results/submission-details/${submissionId}`);
+      return response.data.submission;
+    } catch (error) {
+      console.error('Error fetching submission details:', error);
+      toast.error('Failed to fetch submission details');
+      return null;
+    }
+  };
+
+  // NEW: Function to update question marks
+  const updateQuestionMarks = async (submissionId, questionMarks) => {
+    try {
+      const response = await api.put(`/results/update-question-marks/${submissionId}`, {
+        questionMarks
+      });
+
+      if (response.data) {
+        toast.success('Marks updated successfully');
+        // Refresh reports to show updated data
+        fetchReports();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating question marks:', error);
+      toast.error('Failed to update marks');
+      return false;
+    }
+  };
+
+  // NEW: Component for detailed question marking
+  const QuestionMarkingModal = ({ isOpen, onClose, submissionData }) => {
+    const [questionMarks, setQuestionMarks] = useState({});
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      if (submissionData) {
+        // Initialize marks from existing data
+        const initialMarks = {};
+        submissionData.answers.forEach(answer => {
+          initialMarks[answer.originalQuestionNumber] = answer.isCorrect ? 1 : 0;
+        });
+        setQuestionMarks(initialMarks);
+      }
+    }, [submissionData]);
+
+    const handleMarkChange = (originalQuestionNumber, marks) => {
+      setQuestionMarks(prev => ({
+        ...prev,
+        [originalQuestionNumber]: parseFloat(marks) || 0
+      }));
+    };
+
+    const handleSaveMarks = async () => {
+      setLoading(true);
+
+      const marksArray = Object.entries(questionMarks).map(([questionNum, marks]) => ({
+        originalQuestionNumber: parseInt(questionNum),
+        marks: parseFloat(marks)
+      }));
+
+      const success = await updateQuestionMarks(submissionData._id, marksArray);
+
+      if (success) {
+        onClose();
+      }
+
+      setLoading(false);
+    };
+
+    if (!isOpen || !submissionData) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">
+              Question-wise Marking - {submissionData.student.name} ({submissionData.student.enrollmentNo})
+            </h3>
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {submissionData.answers
+              .sort((a, b) => a.originalQuestionNumber - b.originalQuestionNumber)
+              .map((answer, index) => (
+                <Card key={index} className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-medium">Original Q{answer.originalQuestionNumber}</span>
+                    <span className="text-sm text-gray-500">Shuffled Position: {answer.shuffledPosition}</span>
+                  </div>
+
+                  <div className="mb-2">
+                    <span className="text-sm">
+                      Student Answer: Option {answer.selectedAnswer + 1}
+                      {answer.isCorrect ? ' ✓' : ' ✗'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Marks:</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.5"
+                      value={questionMarks[answer.originalQuestionNumber] || 0}
+                      onChange={(e) => handleMarkChange(answer.originalQuestionNumber, e.target.value)}
+                      className="ml-2 w-20 px-2 py-1 border rounded"
+                    />
+                  </div>
+                </Card>
+              ))}
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleSaveMarks} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Marks'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const getUniqueCoursesAndSubjects = () => {
@@ -192,7 +324,7 @@ const Reports = () => {
       'Grade',
       'Total Marks',
       'Internal Marks',
-      `External Marks/${maxQuestions}.00`
+      `External Marks/70.00`
     ];
 
     // Create question headers using the already calculated maxQuestions
@@ -206,34 +338,35 @@ const Reports = () => {
 
     report.studentResults.forEach(studentResult => {
       // For each test the student took, create a separate row (only for filtered tests)
+      // console.log(`Processing student: ${studentResult.student.fullName} (${studentResult.student.enrollmentNo})`);
       testsToInclude.forEach(test => {
         const testResult = studentResult.testResults.find(tr => tr.test._id === test._id);
-
+        // if (Array.isArray(testResult.result.answers)) {
+        //   testResult.result.answers.slice(0, 10).forEach((answer, ansIdx) => {
+        //     console.log(`    Answer ${ansIdx}: Q${answer.originalQuestionNumber} = ${answer.isCorrect ? 'Correct' : 'Incorrect'}`);
+        //   });
+        // }
         if (testResult && testResult.result.status === 'attempted') {
           // Format dates for Indian timezone
-          const testStartedOn = testResult.result.testStartedOn
-            ? new Date(testResult.result.testStartedOn).toLocaleString('en-IN', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-              timeZone: 'Asia/Kolkata'
-            })
-            : '-';
+          const testStartedOn = testResult.result.testStartedOn ? new Date(testResult.result.testStartedOn).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Kolkata'
+          }) : '-';
 
-          const testCompletedOn = testResult.result.submittedAt
-            ? new Date(testResult.result.submittedAt).toLocaleString('en-IN', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-              timeZone: 'Asia/Kolkata'
-            })
-            : '-';
+          const testCompletedOn = testResult.result.submittedAt ? new Date(testResult.result.submittedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Kolkata'
+          }) : '-';
 
           // Calculate grade - each question carries 1 mark
           const gradeOutOfTotal = testResult.result.score;
@@ -247,17 +380,29 @@ const Reports = () => {
           // Calculate grade points and grade
           const { gradePoints, grade } = calculateGradeAndPoints(totalMarks, gradeOutOfTotal, maxQuestions);
 
-          // Create question status array
-          const questionStatuses = new Array(maxQuestions).fill('-');
+          // Create answer array for ALL questions
+          // const questionStatuses = new Array(maxQuestions).fill('-');
 
-          // Fill in question results if answers are available
+          // Get the full list of original question numbers for the test (e.g., [1, 2, ... N])
+          const fullQuestionNumbers = Array.from({ length: maxQuestions }, (_, i) => i + 1);
+
+          // Build a lookup of the student's answers by originalQuestionNumber
+          const answerMap = {};
           if (testResult.result.answers && Array.isArray(testResult.result.answers)) {
-            testResult.result.answers.forEach((answer, index) => {
-              if (index < maxQuestions) {
-                questionStatuses[index] = answer.isCorrect ? '1.00' : '0.00';
-              }
+            testResult.result.answers.forEach(answer => {
+              answerMap[answer.originalQuestionNumber] = answer.isCorrect ? '1.00' : '0.00';
             });
           }
+          // console.log(`Answer map for student ${studentResult.student.fullName} (${studentResult.student.enrollmentNo}):`, answerMap);
+          // Now build the statuses for export; '-' for questions not in answerMap (not shown to student)
+          const questionStatuses = fullQuestionNumbers.map(qNum => {
+            if (answerMap.hasOwnProperty(qNum)) {
+              return answerMap[qNum];
+            } else {
+              return '-';
+            }
+          });
+
 
           const row = [
             studentResult.student.enrollmentNo,
@@ -278,10 +423,11 @@ const Reports = () => {
             testResult.result.internalMarks ? testResult.result.internalMarks.marks : '', // Internal marks from evaluator
             gradeOutOfTotal, // External marks
             ...questionStatuses.map(status => status === '-' ? '-' : parseFloat(status)),
-            testResult.result.internalMarks ? '... Entered' : 'Not Entered' // Internal marks status
+            testResult.result.internalMarks ? 'Entered' : 'Not Entered' // Internal marks status
           ];
 
           rows.push(row);
+
         } else if (testResult) {
           // Student didn't attempt the test but is enrolled - mark as absent
           const questionStatuses = new Array(maxQuestions).fill('-');
@@ -317,7 +463,6 @@ const Reports = () => {
 
     // Calculate column widths based on content
     const colWidths = [];
-
     // Calculate width for each column
     for (let col = 0; col < headers.length; col++) {
       let maxWidth = 10; // Minimum width
@@ -389,6 +534,7 @@ const Reports = () => {
           worksheet[gradeCellRef] = { v: 'F', t: 's' };
         }
         worksheet[gradeCellRef].s = failStyle;
+
       } else if (gradeValue === 'W') {
         // Apply orange styling to Grade Points column for absent students
         const gradePointsCellRef = XLSX.utils.encode_cell({ r: row, c: gradePointsCol });
@@ -440,15 +586,17 @@ const Reports = () => {
     }
 
     XLSX.writeFile(workbook, fileName);
+    
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <AdminNavbar />
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-gray-600">Loading reports...</span>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg">Loading reports...</div>
+          </div>
         </div>
       </div>
     );
@@ -458,9 +606,9 @@ const Reports = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <AdminNavbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
+        <div className="p-6">
+          <Alert className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         </div>
@@ -475,59 +623,63 @@ const Reports = () => {
     <div className="min-h-screen bg-gray-50">
       <AdminNavbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-            <p className="mt-2 text-gray-600">View detailed performance reports by course and subject</p>
+            <h1 className="text-2xl font-bold text-gray-900">Reports Dashboard</h1>
+            <p className="text-gray-600">View detailed performance reports by course and subject</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               onClick={() => navigate('/admin')}
-              className="flex items-center gap-2"
+              className="flex items-center"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin')}
+              className="flex items-center"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Home
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <GraduationCap className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                  <p className="text-2xl font-bold text-gray-900">{courses.length}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{courses.length}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <BookOpen className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Subjects</p>
-                  <p className="text-2xl font-bold text-gray-900">{subjects.length}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
+              <GraduationCap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{subjects.length}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <FileText className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                  <p className="text-2xl font-bold text-gray-900">{Object.values(groupedReports).reduce((sum, course) => sum + course.subjects.length, 0)}</p>
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Object.values(groupedReports).reduce((sum, course) => sum + course.subjects.length, 0)}
               </div>
             </CardContent>
           </Card>
@@ -535,15 +687,17 @@ const Reports = () => {
 
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Filter Reports</h3>
+          <CardHeader>
+            <CardTitle>Filter Reports</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
+                <label className="text-sm font-medium mb-2 block">Course</label>
                 <select
                   value={selectedCourse}
                   onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                 >
                   <option value="all">All Courses</option>
                   {courses.map(course => (
@@ -553,11 +707,11 @@ const Reports = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                <label className="text-sm font-medium mb-2 block">Subject</label>
                 <select
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                 >
                   <option value="all">All Subjects</option>
                   {subjects.map(subject => (
@@ -569,128 +723,139 @@ const Reports = () => {
           </CardContent>
         </Card>
 
-        {/* Course-wise Reports */}
-        <div className="space-y-8">
-          {Object.keys(groupedReports).length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Reports Available</h3>
-                <p className="text-gray-600">
-                  No reports match your current filter criteria. Try adjusting the filters or ensure that tests and students exist for the selected courses.
-                </p>
+        {/* Reports */}
+        {Object.keys(groupedReports).length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No reports match your current filter criteria. Try adjusting the filters or ensure that tests and students exist for the selected courses.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          Object.entries(groupedReports).map(([courseName, courseData]) => (
+            <Card key={courseName} className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  {courseName}
+                </CardTitle>
+                <p className="text-sm text-gray-600">{courseData.subjects.length} subject(s) available</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {courseData.subjects.map((report, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium text-lg">Subject Code: {report.subject.subjectCode}</h4>
+                          <p className="text-gray-600">{report.subject.subjectName}</p>
+                        </div>
+                        <Badge variant="outline">
+                          {report.tests.length} test(s)
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">{report.studentResults.length}</div>
+                          <div className="text-sm text-gray-600">Students</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">{report.tests.length}</div>
+                          <div className="text-sm text-gray-600">Tests</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {Math.round(report.statistics.averageScore)}
+                          </div>
+                          <div className="text-sm text-gray-600">Avg Score</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {getInternalMarksStats(report).percentage}%
+                          </div>
+                          <div className="text-sm text-gray-600">Internal Marks</div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => exportToExcel(report, 'all')}
+                          className="flex items-center"
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Export Combined Report
+                        </Button>
+
+                        <Button
+                          onClick={() => exportToExcel(report, 'official')}
+                          variant="outline"
+                          className="flex items-center"
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Export Official Only
+                        </Button>
+
+                        <Button
+                          onClick={() => exportToExcel(report, 'demo')}
+                          variant="outline"
+                          className="flex items-center"
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Export Demo Only
+                        </Button>
+
+                        {/* NEW: Question-wise marking button */}
+                        <Button
+                          onClick={async () => {
+                            // Find a submission to work with (taking the first attempted one)
+                            const studentWithSubmission = report.studentResults.find(sr =>
+                              sr.testResults.some(tr => tr.result.status === 'attempted')
+                            );
+
+                            if (studentWithSubmission) {
+                              const testResult = studentWithSubmission.testResults.find(tr => tr.result.status === 'attempted');
+                              if (testResult && testResult.result.submissionId) {
+                                const submissionDetails = await fetchSubmissionDetails(testResult.result.submissionId);
+                                if (submissionDetails) {
+                                  setSelectedSubmissionForMarking(submissionDetails);
+                                  setShowQuestionMarking(true);
+                                }
+                              } else {
+                                toast.error('No submission ID found for this test result');
+                              }
+                            } else {
+                              toast.error('No attempted submissions found for question marking');
+                            }
+                          }}
+                          variant="outline"
+                          className="flex items-center"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Question-wise Marking
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            Object.entries(groupedReports).map(([courseName, courseData]) => (
-              <div key={courseName} className="space-y-4">
-                {/* Course Header */}
-                <div className="border-b border-gray-200 pb-4">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <GraduationCap className="h-7 w-7 text-blue-600" />
-                    {courseName}
-                  </h2>
-                  <p className="text-gray-600 mt-1">{courseData.subjects.length} subject(s) available</p>
-                </div>
-
-                {/* Subject Cards for this Course */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {courseData.subjects.map((report, index) => {
-                    const internalMarksStats = getInternalMarksStats(report);
-
-                    return (
-                      <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <CardTitle className="text-lg">
-                                {report.subject.subjectName}
-                              </CardTitle>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Subject Code: {report.subject.subjectCode}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                                <span>{report.tests.length} test(s)</span>
-                                <span>â€¢</span>
-                                <span>{report.studentResults.length} student(s)</span>
-                              </div>
-
-                              {/* Test Type Badges */}
-                              <div className="flex gap-1 mt-2">
-                                {report.tests.some(test => test.testType === 'demo') && (
-                                  <Badge variant="secondary" className="text-xs px-2 py-1">Demo</Badge>
-                                )}
-                                {report.tests.some(test => test.testType === 'official') && (
-                                  <Badge variant="default" className="text-xs px-2 py-1">Official</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Internal Marks Status */}
-                          {internalMarksStats.totalStudents > 0 && (
-                            <div className="mt-3">
-                              <Alert className={internalMarksStats.percentage === 100 ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
-                                <AlertDescription className={`text-xs ${internalMarksStats.percentage === 100 ? "text-green-800" : "text-yellow-800"}`}>
-                                  Internal Marks: {internalMarksStats.studentsWithMarks}/{internalMarksStats.totalStudents} ({internalMarksStats.percentage}%)
-                                </AlertDescription>
-                              </Alert>
-                            </div>
-                          )}
-                        </CardHeader>
-
-                        <CardContent className="pt-0">
-                          <div className="space-y-2">
-                            <Button
-                              onClick={() => exportToExcel(report, 'all')}
-                              className="w-full flex items-center justify-center gap-2 text-sm"
-                              size="sm"
-                            >
-                              <FileSpreadsheet className="h-4 w-4" />
-                              Export All Tests
-                            </Button>
-
-                            <div className="flex gap-2">
-                              {report.tests.some(test => test.testType === 'demo') && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => exportToExcel(report, 'demo')}
-                                  className="flex-1 flex items-center justify-center gap-1 text-xs"
-                                  size="sm"
-                                >
-                                  <FileSpreadsheet className="h-3 w-3" />
-                                  Demo
-                                </Button>
-                              )}
-
-                              {report.tests.some(test => test.testType === 'official') && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => exportToExcel(report, 'official')}
-                                  className="flex-1 flex items-center justify-center gap-1 text-xs"
-                                  size="sm"
-                                >
-                                  <FileSpreadsheet className="h-3 w-3" />
-                                  Official
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          ))
+        )}
 
         {/* Data Maintenance Section */}
-        <div className="mt-12">
-          <DataMaintenanceSection />
-        </div>
+        <DataMaintenanceSection />
       </div>
+
+      {/* Question Marking Modal */}
+      <QuestionMarkingModal
+        isOpen={showQuestionMarking}
+        onClose={() => {
+          setShowQuestionMarking(false);
+          setSelectedSubmissionForMarking(null);
+        }}
+        submissionData={selectedSubmissionForMarking}
+      />
     </div>
   );
 };
