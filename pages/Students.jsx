@@ -12,7 +12,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
 
 // Get the server base URL for static assets
-const SERVER_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://online-test-platform-server-1q1h.onrender.com';
+// Automatically use local server if available, otherwise use remote
+// Prefer localhost if available, then VITE_API_URL, then remote
+function isLocalhostAvailable(url) {
+  // Try to ping localhost synchronously (not recommended for production, but fine for dev)
+  const xhr = new XMLHttpRequest();
+  try {
+    xhr.open('GET', url + '/health', false); // Assumes /health endpoint exists
+    xhr.send(null);
+    return xhr.status >= 200 && xhr.status < 400;
+  } catch (e) {
+    return false;
+  }
+}
+
+let SERVER_BASE_URL = 'https://online-test-platform-server-1q1h.onrender.com';
+const localUrl = 'http://localhost:5000'; // Change port if needed
+if (isLocalhostAvailable(localUrl)) {
+  SERVER_BASE_URL = localUrl;
+} else if (import.meta.env.VITE_API_URL) {
+  SERVER_BASE_URL = import.meta.env.VITE_API_URL.replace('/api', '');
+}
 
 import { 
   Upload, 
@@ -224,13 +244,14 @@ const Students = () => {
       const response = await api.put(`/bulk/students/${editingStudent._id}`, editFormData);
       
       if (response.data.success) {
-        // Update the students list
-        setStudents(prev => prev.map(student => 
-          student._id === editingStudent._id 
-            ? { ...student, ...editFormData }
-            : student
-        ));
-        
+        // Update the students list immediately
+        setStudents(prev =>
+          prev.map(student =>
+            student._id === editingStudent._id
+              ? { ...student, ...editFormData }
+              : student
+          )
+        );
         setIsEditDialogOpen(false);
         setEditingStudent(null);
         setEditFormData({});
@@ -581,6 +602,27 @@ const Students = () => {
             )}
           </CardContent>
         </Card>
+
+        {filteredStudents.length > 0 && (
+          <Button
+            variant="destructive"
+            className="mb-4"
+            onClick={async () => {
+              if (!window.confirm(`Are you sure you want to delete all ${filteredStudents.length} filtered students? This action cannot be undone.`)) return;
+              try {
+                for (const student of filteredStudents) {
+                  await api.delete(`/bulk/students/${student._id}`);
+                }
+                setStudents(prev => prev.filter(student => !filteredStudents.some(f => f._id === student._id)));
+                toast.success('All filtered students deleted successfully');
+              } catch (error) {
+                toast.error('Failed to delete some students');
+              }
+            }}
+          >
+            Delete All
+          </Button>
+        )}
       </div>
 
       {/* Edit Student Dialog */}
@@ -593,7 +635,7 @@ const Students = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 items-start">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name *</Label>
               <Input
@@ -655,7 +697,8 @@ const Students = () => {
               />
             </div>
             
-            <div className="space-y-2">
+            {/* Course Dropdown */}
+            <div className="space-y-2 w-full flex flex-col mb-4">
               <Label htmlFor="course">Course *</Label>
               <Select 
                 value={editFormData.course || ''} 
@@ -672,13 +715,14 @@ const Students = () => {
                       <SelectItem key={course._id} value={course.courseName}>
                         {course.courseName}
                       </SelectItem>
-                    ))
-                  )}
+                    )))
+                  }
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="space-y-2">
+            {/* Gender Dropdown */}
+            <div className="space-y-2 w-full flex flex-col mb-4">
               <Label htmlFor="gender">Gender *</Label>
               <Select 
                 value={editFormData.gender || ''} 

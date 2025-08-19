@@ -16,7 +16,7 @@ import AdminNavbar from '../components/AdminNavbar';
 const CreateTest = () => {
   const { testId } = useParams();
   const isEditing = !!testId;
-  
+
   const [testData, setTestData] = useState({
     duration: 180,
     course: '',
@@ -81,7 +81,7 @@ const CreateTest = () => {
     try {
       const response = await api.get(`/tests/${testId}/edit`);
       const test = response.data.test;
-      
+
       setTestData({
         duration: test.duration,
         course: test.course?._id || '',
@@ -89,10 +89,10 @@ const CreateTest = () => {
           subjectCode: test.subject?.subjectCode || '',
           subjectName: test.subject?.subjectName || ''
         },
-        activeFrom: test.activeFrom ? 
+        activeFrom: test.activeFrom ?
           new Date(new Date(test.activeFrom).getTime() - new Date().getTimezoneOffset() * 60000)
             .toISOString().slice(0, 16) : '',
-        activeTo: test.activeTo ? 
+        activeTo: test.activeTo ?
           new Date(new Date(test.activeTo).getTime() - new Date().getTimezoneOffset() * 60000)
             .toISOString().slice(0, 16) : '',
         shuffleQuestions: test.shuffleQuestions !== undefined ? test.shuffleQuestions : true,
@@ -135,7 +135,7 @@ const CreateTest = () => {
   const getSelectedCourseSubjects = (courseId, isExcelForm = false) => {
     const selectedCourse = courses.find(course => course._id === courseId);
     if (!selectedCourse) return [];
-    
+
     // Only return subjects that have external exams, since tests are only for subjects with external exams
     return selectedCourse.subjects.filter(subject => subject.hasExternalExam !== false);
   };
@@ -222,7 +222,7 @@ const CreateTest = () => {
 
     for (let i = 0; i < testData.questions.length; i++) {
       const question = testData.questions[i];
-      
+
       if (!question.question.trim()) {
         setError(`Question ${i + 1} is required`);
         return false;
@@ -386,7 +386,7 @@ const CreateTest = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNavbar />
-      
+
       <div className="max-w-4xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-4 sm:mb-6">
           <Button
@@ -397,7 +397,7 @@ const CreateTest = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Admin Panel
           </Button>
-          
+
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
             {isEditing ? (
               <>
@@ -417,7 +417,7 @@ const CreateTest = () => {
               <TabsTrigger value="excel" className="text-sm">Excel Import</TabsTrigger>
               <TabsTrigger value="manual" className="text-sm">Manual Creation</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="excel" className="space-y-6">
               {/* Excel Import Form */}
               <Card>
@@ -589,7 +589,7 @@ const CreateTest = () => {
                           </p>
                         )}
                       </div>
-                      
+
                       {/* Duration Display */}
                       {excelImportData.activeFrom && excelImportData.activeTo && (
                         <div className="md:col-span-2 mt-2">
@@ -604,14 +604,14 @@ const CreateTest = () => {
                                   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                                   const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                                   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                  
+
                                   if (diffMs <= 0) return "Invalid duration";
-                                  
+
                                   let duration = "";
                                   if (diffDays > 0) duration += `${diffDays} day${diffDays > 1 ? 's' : ''} `;
                                   if (diffHours > 0) duration += `${diffHours} hour${diffHours > 1 ? 's' : ''} `;
                                   if (diffMinutes > 0) duration += `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-                                  
+
                                   return duration || "Less than a minute";
                                 })()}
                               </span>
@@ -690,7 +690,7 @@ const CreateTest = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="manual" className="space-y-6">
               {/* Manual Test Creation Form */}
               <Card>
@@ -734,8 +734,8 @@ const CreateTest = () => {
                           <option value="demo">Demo Exam (Optional)</option>
                         </select>
                         <p className="text-sm text-gray-500">
-                          {testData.testType === 'demo' 
-                            ? 'Demo exams are optional practice tests for students' 
+                          {testData.testType === 'demo'
+                            ? 'Demo exams are optional practice tests for students'
                             : 'Official exams are mandatory for all students'}
                         </p>
                       </div>
@@ -869,7 +869,7 @@ const CreateTest = () => {
                           </p>
                         )}
                       </div>
-                      
+
                       {/* Duration Display */}
                       {testData.activeFrom && testData.activeTo && (
                         <div className="lg:col-span-2 mt-2">
@@ -884,14 +884,14 @@ const CreateTest = () => {
                                   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                                   const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                                   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                  
+
                                   if (diffMs <= 0) return "Invalid duration";
-                                  
+
                                   let duration = "";
                                   if (diffDays > 0) duration += `${diffDays} day${diffDays > 1 ? 's' : ''} `;
                                   if (diffHours > 0) duration += `${diffHours} hour${diffHours > 1 ? 's' : ''} `;
                                   if (diffMinutes > 0) duration += `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-                                  
+
                                   return duration || "Less than a minute";
                                 })()}
                               </span>
@@ -1202,7 +1202,7 @@ const CreateTest = () => {
                         </p>
                       )}
                     </div>
-                    
+
                     {/* Duration Display */}
                     {testData.activeFrom && testData.activeTo && (
                       <div className="md:col-span-2 mt-2">
@@ -1217,14 +1217,14 @@ const CreateTest = () => {
                                 const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                                 const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                                 const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                
+
                                 if (diffMs <= 0) return "Invalid duration";
-                                
+
                                 let duration = "";
                                 if (diffDays > 0) duration += `${diffDays} day${diffDays > 1 ? 's' : ''} `;
                                 if (diffHours > 0) duration += `${diffHours} hour${diffHours > 1 ? 's' : ''} `;
                                 if (diffMinutes > 0) duration += `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-                                
+
                                 return duration || "Less than a minute";
                               })()}
                             </span>

@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Progress } from '../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { 
-  Upload, 
-  FileSpreadsheet, 
-  Download, 
-  Users, 
-  ArrowLeft, 
+import {
+  Upload,
+  FileSpreadsheet,
+  Download,
+  Users,
+  ArrowLeft,
   CheckCircle,
   AlertTriangle,
   Info
@@ -36,13 +36,13 @@ const BulkUpload = () => {
   const handleExcelFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-          file.type === 'application/vnd.ms-excel' ||
-          file.name.endsWith('.xlsx') || 
-          file.name.endsWith('.xls')) {
+      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.type === 'application/vnd.ms-excel' ||
+        file.name.endsWith('.xlsx') ||
+        file.name.endsWith('.xls')) {
         setExcelFile(file);
         setError('');
-        
+
         // If we have photos, try to match them
         if (photoFiles.length > 0) {
           matchPhotosWithEnrollment(photoFiles);
@@ -56,17 +56,17 @@ const BulkUpload = () => {
 
   const handlePhotoFilesChange = (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = files.filter(file => 
-      file.type.startsWith('image/') && 
+    const validFiles = files.filter(file =>
+      file.type.startsWith('image/') &&
       (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png'))
     );
-    
+
     if (validFiles.length !== files.length) {
       toast.error('Some files were skipped. Only JPG, JPEG, and PNG images are allowed.');
     }
-    
+
     setPhotoFiles(validFiles);
-    
+
     // If we have both excel file and photos, try to match them
     if (excelFile && validFiles.length > 0) {
       matchPhotosWithEnrollment(validFiles);
@@ -75,17 +75,17 @@ const BulkUpload = () => {
 
   const handleFolderUpload = (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = files.filter(file => 
-      file.type.startsWith('image/') && 
+    const validFiles = files.filter(file =>
+      file.type.startsWith('image/') &&
       (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png'))
     );
-    
+
     if (validFiles.length !== files.length) {
       toast.error('Some files were skipped. Only JPG, JPEG, and PNG images are allowed.');
     }
-    
+
     setPhotoFiles(validFiles);
-    
+
     // If we have both excel file and photos, try to match them
     if (excelFile && validFiles.length > 0) {
       matchPhotosWithEnrollment(validFiles);
@@ -98,15 +98,15 @@ const BulkUpload = () => {
     try {
       // Read Excel file directly in the browser
       const fileReader = new FileReader();
-      
+
       fileReader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          
+
           // For now, let's create a simple fallback that extracts enrollment from filenames
           // and matches them with photo filenames
           const enrollmentNumbers = [];
-          
+
           // Extract enrollment numbers from photo filenames as a fallback
           photoFiles.forEach(photo => {
             const fileName = photo.name.replace(/\.(jpg|jpeg|png)$/i, '');
@@ -122,7 +122,7 @@ const BulkUpload = () => {
           photoFiles.forEach(photo => {
             const fileName = photo.name.replace(/\.(jpg|jpeg|png)$/i, '');
             const enrollmentNo = fileName.trim();
-            
+
             if (enrollmentNo && !processedEnrollments.has(enrollmentNo)) {
               matches.push({
                 enrollmentNo: enrollmentNo,
@@ -135,14 +135,14 @@ const BulkUpload = () => {
           });
 
           setPhotoMatches(matches);
-          
+
           if (matches.length > 0) {
             toast.success(`Successfully matched ${matches.length} photos with enrollment numbers`);
           }
 
         } catch (parseError) {
           console.error('Error processing Excel file:', parseError);
-          
+
           // Fallback: Create matches based on photo filenames only
           const matches = photoFiles.map(photo => {
             const fileName = photo.name.replace(/\.(jpg|jpeg|png)$/i, '');
@@ -153,7 +153,7 @@ const BulkUpload = () => {
               matched: true
             };
           });
-          
+
           setPhotoMatches(matches);
           toast.info('Using photo filenames as enrollment numbers. Please verify the matches.');
         }
@@ -168,7 +168,7 @@ const BulkUpload = () => {
 
     } catch (error) {
       console.error('Error matching photos:', error);
-      
+
       // Ultimate fallback: Just create matches based on photo filenames
       const matches = photoFiles.map(photo => {
         const fileName = photo.name.replace(/\.(jpg|jpeg|png)$/i, '');
@@ -179,7 +179,7 @@ const BulkUpload = () => {
           matched: true
         };
       });
-      
+
       setPhotoMatches(matches);
       toast.warning('Could not read Excel file. Using photo filenames as enrollment numbers.');
     }
@@ -190,7 +190,7 @@ const BulkUpload = () => {
       const response = await api.get('/bulk/students/download-template', {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -199,7 +199,7 @@ const BulkUpload = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('Excel template downloaded successfully! Check the Instructions sheet for detailed field information.');
     } catch (error) {
       console.error('Error downloading template:', error);
@@ -220,7 +220,7 @@ const BulkUpload = () => {
     try {
       const formData = new FormData();
       formData.append('excel', excelFile);
-      
+
       // Add matched photo files with their enrollment numbers
       if (photoMatches.length > 0) {
         photoMatches.forEach((match) => {
@@ -254,12 +254,12 @@ const BulkUpload = () => {
 
       setUploadResult(response.data);
       toast.success('Students data uploaded successfully!');
-      
+
       // Reset form
       setExcelFile(null);
       setPhotoFiles([]);
       setPhotoMatches([]);
-      
+
       // Reset file inputs
       const excelInput = document.getElementById('excel-file');
       const photoInput = document.getElementById('photo-files');
@@ -280,7 +280,7 @@ const BulkUpload = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNavbar />
-      
+
       <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Button
@@ -291,7 +291,7 @@ const BulkUpload = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Admin Dashboard
           </Button>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <Users className="h-8 w-8 mr-3" />
             Upload Students Data
@@ -363,7 +363,7 @@ const BulkUpload = () => {
                       disabled={uploading}
                     />
                   </div>
-                  
+
                   {excelFile && (
                     <div className="flex items-center text-sm text-green-600">
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -450,7 +450,7 @@ const BulkUpload = () => {
                       />
                     )}
                   </div>
-                  
+
                   {photoFiles.length > 0 && (
                     <div className="flex items-center text-sm text-green-600">
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -488,30 +488,27 @@ const BulkUpload = () => {
                       {photoMatches.map((match, index) => (
                         <div
                           key={index}
-                          className={`flex items-center justify-between p-2 rounded-md border ${
-                            match.matched 
-                              ? 'bg-green-50 border-green-200' 
+                          className={`flex items-center justify-between p-2 rounded-md border ${match.matched
+                              ? 'bg-green-50 border-green-200'
                               : 'bg-yellow-50 border-yellow-200'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <div className={`w-3 h-3 rounded-full ${
-                              match.matched ? 'bg-green-500' : 'bg-yellow-500'
-                            }`} />
+                            <div className={`w-3 h-3 rounded-full ${match.matched ? 'bg-green-500' : 'bg-yellow-500'
+                              }`} />
                             <span className="font-medium text-sm">
                               {match.enrollmentNo}
                             </span>
                           </div>
-                          <div className={`text-sm ${
-                            match.matched ? 'text-green-700' : 'text-yellow-700'
-                          }`}>
+                          <div className={`text-sm ${match.matched ? 'text-green-700' : 'text-yellow-700'
+                            }`}>
                             {match.fileName}
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
                       <div className="text-lg font-semibold text-green-600">
@@ -527,7 +524,7 @@ const BulkUpload = () => {
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-semibold text-gray-600">
-                        {photoFiles.filter(photo => 
+                        {photoFiles.filter(photo =>
                           !photoMatches.some(m => m.file === photo)
                         ).length}
                       </div>
@@ -634,7 +631,7 @@ const BulkUpload = () => {
                   <p className="text-sm text-gray-600">
                     You can upload student photos in two ways:
                   </p>
-                  
+
                   <div className="ml-4 space-y-2">
                     <div>
                       <h4 className="font-medium text-sm">Option 1: Upload Folder</h4>
@@ -644,7 +641,7 @@ const BulkUpload = () => {
                         <li>Shows preview of matched/unmatched photos</li>
                       </ul>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-medium text-sm">Option 2: Select Individual Files</h4>
                       <ul className="text-sm text-gray-600 list-disc list-inside ml-4">
@@ -653,7 +650,7 @@ const BulkUpload = () => {
                       </ul>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-gray-600">
                     <p><strong>File Requirements:</strong></p>
                     <ul className="list-disc list-inside ml-4">
@@ -674,7 +671,7 @@ const BulkUpload = () => {
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Note:</strong> Passwords will be automatically generated using enrollment numbers. 
+                    <strong>Note:</strong> Passwords will be automatically generated using enrollment numbers.
                     Students can use their enrollment number as both username and password for first login.
                   </AlertDescription>
                 </Alert>
