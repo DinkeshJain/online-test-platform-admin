@@ -12,7 +12,7 @@ const AdminNavbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   const toggleMobileMenu = () => {
@@ -24,11 +24,11 @@ const AdminNavbar = () => {
   };
 
   const navItems = [
-    { path: '/admin/dashboard', icon: Home, label: 'Dashboard' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
-    { path: '/admin/courses', icon: BookOpen, label: 'Courses' },
-    { path: '/admin/evaluators', icon: ClipboardCheck, label: 'Evaluators' },
-    { path: '/admin/students', icon: Users, label: 'Students' },
+    { path: '/dashboard', icon: Home, label: 'Dashboard' },
+    { path: '/reports', icon: BarChart3, label: 'Reports' },
+    { path: '/courses', icon: BookOpen, label: 'Courses' },
+    { path: '/evaluators', icon: ClipboardCheck, label: 'Evaluators' },
+    { path: '/students', icon: Users, label: 'Students' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -39,9 +39,7 @@ const AdminNavbar = () => {
         <div className="flex items-center h-16 gap-4">
           {/* Logo/Brand - Fixed width */}
           <div className="flex items-center flex-shrink-0 min-w-fit">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center mr-3 shadow-md">
-              <span className="text-white font-bold text-lg">AU</span>
-            </div>
+            <img src="/logo-anu.png" alt="AU" className="mr-3" style={{ height: '40px', width: '40px', objectFit: 'contain' }} />
             <div className="hidden lg:block">
               <h1 className="text-lg font-bold text-gray-900 leading-tight whitespace-nowrap">
                 <span className="text-gray-900">Acharya Nagarjuna University</span>
@@ -50,10 +48,10 @@ const AdminNavbar = () => {
               </h1>
             </div>
             <div className="hidden md:block lg:hidden">
-              <h1 className="text-base font-bold text-gray-900 whitespace-nowrap">AU Admin</h1>
+              <span className="flex items-center"><img src="/logo-anu.png" alt="AU" style={{ height: '24px', width: '24px', objectFit: 'contain', marginRight: '6px' }} /> Admin</span>
             </div>
             <div className="block md:hidden">
-              <h1 className="text-lg font-bold text-gray-900 whitespace-nowrap">AU</h1>
+              <img src="/logo-anu.png" alt="AU" style={{ height: '32px', width: '32px', objectFit: 'contain' }} />
             </div>
           </div>
 

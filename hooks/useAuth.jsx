@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }) => {
 
   const forceLogout = () => {
     logout();
-    window.location.href = '/admin/login';
+    window.location.href = '/login';
   };
 
   const value = {

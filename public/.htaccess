@@ -1,8 +1,18 @@
-Options -MultiViews
+# Enable Rewrite
 RewriteEngine On
 RewriteBase /
-RewriteRule ^index.html$ - [L]
+
+# Redirect HTTP to HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Proxy all /api requests to backend Node.js HTTP server on port 5000
+RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
+
+# SPA routing fallback (serve index.html for other routes)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Disable directory browsing
+Options -Indexes

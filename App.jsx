@@ -43,10 +43,10 @@ function AdminApp() {
             }}
           />
           <Routes>
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/register" element={<AdminRegister />} />
+            <Route path="/login" element={<AdminLogin />} />
+            <Route path="/register" element={<AdminRegister />} />
             <Route 
-              path="/admin/dashboard" 
+              path="/dashboard" 
               element={
                 <ProtectedRoute adminOnly>
                   <AdminDashboard />
@@ -54,7 +54,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/create-test" 
+              path="/create-test" 
               element={
                 <ProtectedRoute adminOnly>
                   <CreateTest />
@@ -62,7 +62,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/bulk-upload" 
+              path="/bulk-upload" 
               element={
                 <ProtectedRoute adminOnly>
                   <BulkUpload />
@@ -70,7 +70,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/students" 
+              path="/students" 
               element={
                 <ProtectedRoute adminOnly>
                   <Students />
@@ -78,7 +78,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/courses" 
+              path="/courses" 
               element={
                 <ProtectedRoute adminOnly>
                   <CourseManager />
@@ -86,7 +86,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/evaluators" 
+              path="/evaluators" 
               element={
                 <ProtectedRoute adminOnly>
                   <EvaluatorManagement />
@@ -94,7 +94,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/reports" 
+              path="/reports" 
               element={
                 <ProtectedRoute adminOnly>
                   <Reports />
@@ -102,7 +102,7 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/data-maintenance" 
+              path="/data-maintenance" 
               element={
                 <ProtectedRoute adminOnly>
                   <DataMaintenance />
@@ -110,15 +110,15 @@ function AdminApp() {
               } 
             />
             <Route 
-              path="/admin/edit-test/:testId" 
+              path="/edit-test/:testId" 
               element={
                 <ProtectedRoute adminOnly>
                   <CreateTest />
                 </ProtectedRoute>
               } 
             />
-            <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-            <Route path="/" element={<Navigate to="/admin/login" replace />} />
+            <Route path="/admin" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </Router>

@@ -186,7 +186,7 @@ const EvaluatorManagement = () => {
           <div className="flex items-center gap-4 mb-4">
             <Button
               variant="outline"
-              onClick={() => navigate('/admin/dashboard')}
+              onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -195,7 +195,7 @@ const EvaluatorManagement = () => {
             
             <nav className="flex items-center space-x-2 text-sm text-gray-500">
               <button
-                onClick={() => navigate('/admin/dashboard')}
+                onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-1 hover:text-blue-600 transition-colors"
               >
                 <Home className="h-4 w-4" />

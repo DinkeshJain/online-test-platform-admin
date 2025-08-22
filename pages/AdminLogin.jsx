@@ -38,13 +38,13 @@ const AdminLogin = () => {
       // Check if user is admin after successful login
       const userData = JSON.parse(localStorage.getItem('user'));
       if (userData?.role !== 'admin') {
-        setError('Only admin accounts can access this portal. Please use student login.');
+        setError('Invalid credentials');
         setLoading(false);
         return;
       }
       
       toast.success('Admin login successful!');
-      navigate('/admin/dashboard');
+      navigate('/dashboard');
     } else {
       setError(result.message);
       toast.error(result.message);
@@ -58,22 +58,39 @@ const AdminLogin = () => {
       <div className="w-full max-w-md">
         <Card className="shadow-lg border border-gray-300 overflow-hidden">
           <CardHeader className="text-center pb-3 bg-white">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-              <Shield className="h-8 w-8 text-gray-600" />
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-lg font-bold text-gray-900 leading-tight">
-                <span className="text-gray-800">Acharya Nagarjuna University</span>
-                <br />
-                <span className="text-gray-600 text-sm"> in collaboration with </span>
-                <br />
-                <span className="text-gray-800">National Institute of Fire and Safety</span>
-              </CardTitle>
-              <CardDescription className="text-gray-600 text-sm font-medium">
-                Administrative Portal - Secure Login
-              </CardDescription>
-            </div>
-          </CardHeader>
+              <div className="flex items-center justify-between mb-2" style={{ minHeight: '70px' }}>
+                <img
+                  src="/logo-anu.png"
+                  alt="Acharya Nagarjuna University"
+                  style={{
+                    height: '55px',
+                    width: '55px',
+                    objectFit: 'contain',
+                    borderRadius: '8px'
+                  }}
+                />
+                <div className="flex flex-col items-center flex-1 px-2">
+                  <span className="text-base font-bold text-gray-800">Acharya Nagarjuna University</span>
+                  <span className="text-sm text-gray-600 font-semibold">in collaboration with</span>
+                  <span className="text-sm font-bold text-gray-800">National Institute of Fire and Safety</span>
+                </div>
+                <img
+                  src="/logo-nifs.png"
+                  alt="National Institute of Fire and Safety"
+                  style={{
+                    height: '65px',
+                    width: '65px',
+                    objectFit: 'contain',
+                    borderRadius: '8px'
+                  }}
+                />
+              </div>
+              <div className="mt-2 mb-2">
+                <span className="block text-base font-bold text-blue-700">
+                  Admin Portal - Secure Login
+                </span>
+              </div>
+            </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-3">
               {error && (

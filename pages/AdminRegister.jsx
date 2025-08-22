@@ -47,7 +47,7 @@ const AdminRegister = () => {
     const result = await registerAdmin(formData.name, formData.username);
     
     if (result.success) {
-      navigate('/admin/dashboard');
+      navigate('/dashboard');
     } else {
       setError(result.message);
     }
@@ -136,7 +136,7 @@ const AdminRegister = () => {
 
             <div className="mt-6 text-center text-sm">
               Already have an account?{' '}
-              <Link to="/admin/login" className="text-gray-600 hover:underline font-medium">
+              <Link to="/login" className="text-gray-600 hover:underline font-medium">
                 Sign in here
               </Link>
             </div>

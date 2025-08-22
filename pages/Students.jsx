@@ -11,29 +11,6 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
 
-// Get the server base URL for static assets
-// Automatically use local server if available, otherwise use remote
-// Prefer localhost if available, then VITE_API_URL, then remote
-function isLocalhostAvailable(url) {
-  // Try to ping localhost synchronously (not recommended for production, but fine for dev)
-  const xhr = new XMLHttpRequest();
-  try {
-    xhr.open('GET', url + '/health', false); // Assumes /health endpoint exists
-    xhr.send(null);
-    return xhr.status >= 200 && xhr.status < 400;
-  } catch (e) {
-    return false;
-  }
-}
-
-let SERVER_BASE_URL = 'https://online-test-platform-server-1q1h.onrender.com';
-const localUrl = 'http://localhost:5000'; // Change port if needed
-if (isLocalhostAvailable(localUrl)) {
-  SERVER_BASE_URL = localUrl;
-} else if (import.meta.env.VITE_API_URL) {
-  SERVER_BASE_URL = import.meta.env.VITE_API_URL.replace('/api', '');
-}
-
 import { 
   Upload, 
   Search, 
@@ -140,7 +117,7 @@ const Students = () => {
   };
 
   const handleUploadClick = () => {
-    navigate('/admin/bulk-upload');
+    navigate('/bulk-upload');
   };
 
   const handleExportData = async () => {

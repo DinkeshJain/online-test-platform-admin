@@ -109,7 +109,7 @@ const CreateTest = () => {
     } catch (error) {
       console.error('Error fetching test for edit:', error);
       toast.error('Failed to load test for editing');
-      navigate('/admin/dashboard');
+      navigate('/dashboard');
     } finally {
       setInitialLoading(false);
     }
@@ -265,7 +265,7 @@ const CreateTest = () => {
         await api.post('/tests', submitData);
         toast.success('Test created successfully!');
       }
-      navigate('/admin/dashboard');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error saving test:', error);
       const errorMessage = error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} test`;
@@ -350,7 +350,7 @@ const CreateTest = () => {
       });
 
       toast.success(response.data.message);
-      navigate('/admin/dashboard');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error importing Excel:', error);
       const errorMessage = error.response?.data?.message || 'Failed to import Excel file';
@@ -369,7 +369,7 @@ const CreateTest = () => {
     const day = String(d.getDate()).padStart(2, '0');
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}T${hours}:${minutes}+05:30`;
   };
 
   if (initialLoading) {
@@ -391,7 +391,7 @@ const CreateTest = () => {
         <div className="mb-4 sm:mb-6">
           <Button
             variant="outline"
-            onClick={() => navigate('/admin/dashboard')}
+            onClick={() => navigate('/dashboard')}
             className="mb-4 w-full sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -427,7 +427,7 @@ const CreateTest = () => {
                     Import Test from Excel
                   </CardTitle>
                   <CardDescription>
-                    Upload an Excel file with questions and options. Headers should be in row 4: Sl No, QUESTION, Right Option, Option 2, Option 3, Option 4. Data starts from row 6.
+                    Upload an Excel file with questions and options. Headers should be in row 4: Sl No, QUESTION, Right Option, Option 2, Option 3, Option 4. Data starts from row 5.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -669,7 +669,7 @@ const CreateTest = () => {
                         required
                       />
                       <p className="text-sm text-gray-500">
-                        Upload an Excel file (.xlsx or .xls) with headers in row 4: Sl No, QUESTION, Right Option, Option 2, Option 3, Option 4. Data starts from row 6.
+                        Upload an Excel file (.xlsx or .xls) with headers in row 4: Sl No, QUESTION, Right Option, Option 2, Option 3, Option 4. Data starts from row 5.
                       </p>
                     </div>
 

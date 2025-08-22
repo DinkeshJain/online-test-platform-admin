@@ -28,6 +28,7 @@ import {
   GripVertical
 } from 'lucide-react';
 import AdminNavbar from '../components/AdminNavbar';
+import DataMaintenanceSection from '../components/DataMaintenanceSection';
 
 const CourseManager = () => {
   const [courses, setCourses] = useState([]);
@@ -264,7 +265,7 @@ const CourseManager = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
-                onClick={() => navigate('/admin/dashboard')}
+                onClick={() => navigate('/dashboard')}
                 className="flex items-center"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -531,6 +532,7 @@ const CourseManager = () => {
           )}
         </div>
       </div>
+      <DataMaintenanceSection />
     </div>
   );
 };

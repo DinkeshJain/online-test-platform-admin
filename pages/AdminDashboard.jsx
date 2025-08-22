@@ -75,7 +75,7 @@ const AdminDashboard = () => {
   };
 
   const handleEditTest = (testId) => {
-    navigate(`/admin/edit-test/${testId}`);
+    navigate(`/edit-test/${testId}`);
   };
 
   const handleDeleteTest = async (testId) => {
@@ -534,14 +534,14 @@ const AdminDashboard = () => {
               <div className="flex flex-col sm:flex-row gap-3 sm:mt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate('/admin/reports')}
+                  onClick={() => navigate('/reports')}
                   className="w-full sm:w-auto"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   View Reports
                 </Button>
                 <Button 
-                  onClick={() => navigate('/admin/create-test')}
+                  onClick={() => navigate('/create-test')}
                   className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800"
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -701,7 +701,7 @@ const AdminDashboard = () => {
                   }
                 </p>
                 {tests.length === 0 && (
-                  <Button className="mt-4" onClick={() => navigate('/admin/create-test')}>
+                  <Button className="mt-4" onClick={() => navigate('/create-test')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Test
                   </Button>
