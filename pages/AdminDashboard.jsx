@@ -53,8 +53,37 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
+      console.log('🔄 Starting fetchData...');
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      console.log('🔑 Auth token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
+      console.log('👤 User data:', user ? JSON.parse(user) : 'Missing');
+      
+      if (!token) {
+        console.error('❌ No authentication token found!');
+        toast.error('Please log in to access admin dashboard');
+        return;
+      }
+      
       const [testsResponse, studentsResponse, coursesResponse] = await Promise.all([
-        api.get('/tests/admin'),
+        (async () => {
+          try {
+            console.log('🚀 Making request to /tests/admin...');
+            const response = await api.get('/tests/admin');
+            console.log('✅ Tests API success:', response);
+            return response;
+          } catch (error) {
+            console.error('❌ Tests API failed:', error);
+            console.error('❌ Error details:', {
+              message: error.message,
+              status: error.response?.status,
+              statusText: error.response?.statusText,
+              data: error.response?.data,
+              config: error.config
+            });
+            return { data: { tests: [] } };
+          }
+        })(),
         api.get('/bulk/students/count').catch(() => ({ data: { count: 0 } })), // Fallback if endpoint doesn't exist yet
         api.get('/courses').catch((error) => {
           console.error('Courses API error:', error);
@@ -62,7 +91,18 @@ const AdminDashboard = () => {
         }) // Fallback for courses
       ]);
       
-      setTests(testsResponse.data.tests);
+      console.log('🔍 Raw API responses:');
+      console.log('Tests response:', testsResponse);
+      console.log('Students response:', studentsResponse);
+      console.log('Courses response:', coursesResponse);
+      
+      console.log('API Responses:', {
+        tests: testsResponse?.data?.tests?.length || 0,
+        students: studentsResponse?.data?.count || 0,
+        courses: coursesResponse?.data?.courses?.length || 0
+      });
+      
+      setTests(testsResponse.data.tests || []);
       setStudentCount(studentsResponse.data.count || 0);
       setCourses(coursesResponse.data.courses || []);
       setCourseCount(coursesResponse.data.courses?.length || 0);
@@ -110,7 +150,7 @@ const AdminDashboard = () => {
     // Filter tests by selected course first
     const filteredTests = selectedCourse === 'all' 
       ? tests 
-      : tests.filter(test => test.course?._id === selectedCourse);
+      : tests.filter(test => test.courseCode === selectedCourse);
     
     // Extract unique subjects from filtered tests
     const subjects = [...new Set(filteredTests.map(test => `${test.subject?.subjectCode}-${test.subject?.subjectName}`))];
@@ -172,7 +212,7 @@ const AdminDashboard = () => {
 
   const getFilteredTests = () => {
     return tests.filter(test => {
-      const courseMatch = selectedCourse === 'all' || test.course?._id === selectedCourse;
+      const courseMatch = selectedCourse === 'all' || test.courseCode === selectedCourse;
       const subjectMatch = selectedSubject === 'all' || 
         `${test.subject?.subjectCode}-${test.subject?.subjectName}` === selectedSubject;
       const testTypeMatch = selectedTestType === 'all' || test.testType === selectedTestType;
@@ -641,7 +681,7 @@ const AdminDashboard = () => {
                   <option value="all">All Courses</option>
                   {courses.map(course => {
                     return (
-                      <option key={course._id} value={course._id}>
+                      <option key={course._id} value={course.courseCode}>
                         {course.courseCode} - {course.courseName}
                       </option>
                     );
@@ -729,10 +769,10 @@ const AdminDashboard = () => {
                         
                         {/* Course and Subject Info */}
                         <div className="flex flex-wrap gap-2 mb-2">
-                          {test.course && (
+                          {test.courseCode && (
                             <Badge variant="outline" className="text-blue-600 border-blue-600">
                               <BookOpen className="h-3 w-3 mr-1" />
-                              {test.course.courseCode}
+                              {test.courseCode}
                             </Badge>
                           )}
                           <Badge 

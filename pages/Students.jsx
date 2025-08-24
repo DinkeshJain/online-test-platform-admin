@@ -10,20 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
-
-import { 
-  Upload, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye,
-  Users,
-  FileText,
-  Loader2,
-  Edit,
-  User,
-  Trash2
-} from 'lucide-react';
+import { Upload, Search, Filter, Download, Eye, Users, FileText, Loader2, Edit, User, Trash2, ClipboardList } from 'lucide-react';
 import AdminNavbar from '../components/AdminNavbar';
 
 const Students = () => {
@@ -35,13 +22,13 @@ const Students = () => {
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [studentsPerPage] = useState(10);
-  
+
   // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,18 +42,15 @@ const Students = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
       const [studentsResponse, coursesResponse] = await Promise.all([
         api.get('/bulk/students/all'),
         api.get('/courses')
       ]);
-      
       setStudents(studentsResponse.data.students || []);
       setCourses(coursesResponse.data.courses || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       console.error('Error response:', error.response);
-      
       // Try to fetch courses separately if the combined call fails
       try {
         const coursesResponse = await api.get('/courses');
@@ -82,7 +66,7 @@ const Students = () => {
           { _id: '5', name: 'Civil' }
         ]);
       }
-      
+
       if (error.response?.status === 404) {
         // If endpoint doesn't exist, show empty state
         setStudents([]);
@@ -99,7 +83,7 @@ const Students = () => {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(student => 
+      filtered = filtered.filter(student =>
         student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.enrollmentNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.fatherName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -120,12 +104,13 @@ const Students = () => {
     navigate('/bulk-upload');
   };
 
+  const handleViewAttendance = () => {
+    navigate('/attendance');
+  };
+
   const handleExportData = async () => {
     try {
-      const response = await api.get('/bulk/students/export', {
-        responseType: 'blob'
-      });
-      
+      const response = await api.get('/bulk/students/export', { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -134,7 +119,6 @@ const Students = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
       toast.success('Students data exported successfully');
     } catch (error) {
       console.error('Error exporting data:', error);
@@ -165,7 +149,7 @@ const Students = () => {
           console.log('Error formatting date of birth:', e);
         }
       }
-      
+
       let formattedAdmissionDate = '';
       if (student.admissionDate) {
         try {
@@ -177,20 +161,19 @@ const Students = () => {
           console.log('Error formatting admission date:', e);
         }
       }
-      
+
       // Find the full course name from the course code
       let courseName = student.course || '';
       if (student.course && courses.length > 0) {
         // Try to find course by code first
-        const foundCourse = courses.find(course => 
-          course.courseCode === student.course || 
-          course.courseName === student.course
+        const foundCourse = courses.find(course =>
+          course.courseCode === student.course || course.courseName === student.course
         );
         if (foundCourse) {
           courseName = foundCourse.courseName;
         }
       }
-      
+
       setEditingStudent(student);
       setEditFormData({
         fullName: student.fullName || '',
@@ -207,7 +190,6 @@ const Students = () => {
         fatherName: student.fatherName || '',
         motherName: student.motherName || ''
       });
-      
       setIsEditDialogOpen(true);
     }
   };
@@ -217,18 +199,16 @@ const Students = () => {
 
     try {
       setIsUpdating(true);
-      
       const response = await api.put(`/bulk/students/${editingStudent._id}`, editFormData);
-      
+
       if (response.data.success) {
         // Update the students list immediately
-        setStudents(prev =>
-          prev.map(student =>
-            student._id === editingStudent._id
-              ? { ...student, ...editFormData }
-              : student
-          )
-        );
+        setStudents(prev => prev.map(student =>
+          student._id === editingStudent._id
+            ? { ...student, ...editFormData }
+            : student
+        ));
+
         setIsEditDialogOpen(false);
         setEditingStudent(null);
         setEditFormData({});
@@ -247,7 +227,7 @@ const Students = () => {
   const handleDeleteStudent = async (studentId) => {
     try {
       const response = await api.delete(`/bulk/students/${studentId}`);
-      
+
       if (response.data.success) {
         // Remove the student from the list
         setStudents(prev => prev.filter(student => student._id !== studentId));
@@ -277,11 +257,8 @@ const Students = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <AdminNavbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-2 text-gray-600">Loading students...</span>
-          </div>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );
@@ -290,76 +267,51 @@ const Students = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNavbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Students</h1>
-              <p className="mt-1 text-sm text-gray-600">
-                Manage and view all registered students
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={handleExportData}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export Data
-              </Button>
-              <Button
-                onClick={handleUploadClick}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Upload Students
-              </Button>
-            </div>
-          </div>
-        </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{students.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{courses.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Filtered Results</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredStudents.length}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Students Management
+                </CardTitle>
+                <CardDescription>
+                  Manage and view all registered students
+                </CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={handleUploadClick}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Students
+                </Button>
+                <Button
+                  onClick={handleViewAttendance}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  View Attendance
+                </Button>
+                <Button
+                  onClick={handleExportData}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export Data
+                </Button>
+              </div>
+            </div>
           </CardHeader>
+
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -372,49 +324,47 @@ const Students = () => {
                 </div>
               </div>
               <div className="sm:w-48">
-                <select
-                  value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Courses</option>
-                  {courses.map((course) => (
-                    <option key={course._id} value={course.courseCode}>
-                      {course.courseName}
-                    </option>
-                  ))}
-                </select>
+                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course._id} value={course.courseCode}>
+                        {course.courseName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Students Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Students List</CardTitle>
-            <CardDescription>
-              {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {currentStudents.length === 0 ? (
+            {/* Results Summary */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Showing {filteredStudents.length} of {students.length} students
+                {selectedCourse !== 'all' && ` in ${getCourseName(selectedCourse)}`}
+              </p>
+            </div>
+
+            {/* Students Table */}
+            {filteredStudents.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {students.length === 0 
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
+                <p className="text-gray-500 mb-4">
+                  {students.length === 0
                     ? "Get started by uploading student data."
                     : "Try adjusting your search or filter criteria."
                   }
                 </p>
                 {students.length === 0 && (
-                  <div className="mt-6">
-                    <Button onClick={handleUploadClick}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Students
-                    </Button>
-                  </div>
+                  <Button onClick={handleUploadClick} className="flex items-center gap-2 mx-auto">
+                    <Upload className="h-4 w-4" />
+                    Upload Students
+                  </Button>
                 )}
               </div>
             ) : (
@@ -423,115 +373,87 @@ const Students = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Photo
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Father's Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Enrollment Number
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Batch Year
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Course
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Father's Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrollment Number</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Year</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {currentStudents.map((student) => (
                         <tr key={student._id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex-shrink-0 h-12 w-12">
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                               {student.photoPath ? (
                                 <img
-                                  className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
-                                  src={`${SERVER_BASE_URL}/uploads/${student.photoPath}`}
+                                  src={`/uploads/${student.photoPath}`}
                                   alt={student.name}
+                                  className="h-10 w-10 rounded-full object-cover"
                                   onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'flex';
                                   }}
                                 />
                               ) : null}
-                              <div 
-                                className={`h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center ${student.photoPath ? 'hidden' : 'flex'}`}
-                                style={{ display: student.photoPath ? 'none' : 'flex' }}
-                              >
-                                <User className="h-6 w-6 text-gray-400" />
-                              </div>
+                              <User className="h-6 w-6 text-gray-400" />
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {student.name}
-                            </div>
+                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {student.fatherName || 'N/A'}
-                            </div>
+                            <div className="text-sm text-gray-900">{student.fatherName || 'N/A'}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{student.enrollmentNumber}</div>
+                            <div className="text-sm font-mono text-gray-900">{student.enrollmentNumber}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{student.batchYear || 'N/A'}</div>
+                            <Badge variant="outline">{student.batchYear || 'N/A'}</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="secondary">
-                              {getCourseName(student.course)}
-                            </Badge>
+                            <div className="text-sm text-gray-900">{getCourseName(student.course)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditStudent(student._id)}
-                                className="flex items-center gap-1"
-                              >
-                                <Edit className="h-3 w-3" />
-                                Edit
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditStudent(student._id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Edit
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete {student.name}? This action cannot be undone and will also delete all associated submissions and internal marks.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteStudent(student._id)}
+                                    className="bg-red-600 hover:bg-red-700"
                                   >
-                                    <Trash2 className="h-3 w-3" />
                                     Delete
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Student</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete {student.fullName}? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteStudent(student._id)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </td>
                         </tr>
                       ))}
@@ -543,7 +465,7 @@ const Students = () => {
                 {totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-gray-700">
-                      Showing {indexOfFirstStudent + 1} to {Math.min(indexOfLastStudent, filteredStudents.length)} of {filteredStudents.length} results
+                      Showing {indexOfFirstStudent + 1} to {Math.min(indexOfLastStudent, filteredStudents.length)} of {filteredStudents.length} students
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -554,14 +476,15 @@ const Students = () => {
                       >
                         Previous
                       </Button>
-                      {[...Array(totalPages)].map((_, index) => (
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
                         <Button
-                          key={index + 1}
-                          variant={currentPage === index + 1 ? "default" : "outline"}
+                          key={number}
+                          variant={currentPage === number ? "default" : "outline"}
                           size="sm"
-                          onClick={() => paginate(index + 1)}
+                          onClick={() => paginate(number)}
+                          className="w-8"
                         >
-                          {index + 1}
+                          {number}
                         </Button>
                       ))}
                       <Button
@@ -579,205 +502,80 @@ const Students = () => {
             )}
           </CardContent>
         </Card>
-
-        {filteredStudents.length > 0 && (
-          <Button
-            variant="destructive"
-            className="mb-4"
-            onClick={async () => {
-              if (!window.confirm(`Are you sure you want to delete all ${filteredStudents.length} filtered students? This action cannot be undone.`)) return;
-              try {
-                for (const student of filteredStudents) {
-                  await api.delete(`/bulk/students/${student._id}`);
-                }
-                setStudents(prev => prev.filter(student => !filteredStudents.some(f => f._id === student._id)));
-                toast.success('All filtered students deleted successfully');
-              } catch (error) {
-                toast.error('Failed to delete some students');
-              }
-            }}
-          >
-            Delete All
-          </Button>
-        )}
       </div>
 
       {/* Edit Student Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Student</DialogTitle>
             <DialogDescription>
-              Update student information. All fields marked with * are required.
+              Make changes to student information here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 items-start">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name *</Label>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="fullName" className="text-right">
+                Full Name
+              </Label>
               <Input
                 id="fullName"
                 value={editFormData.fullName || ''}
                 onChange={(e) => handleEditFormChange('fullName', e.target.value)}
-                placeholder="Enter full name"
+                className="col-span-3"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="enrollmentNo">Enrollment Number *</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="enrollmentNo" className="text-right">
+                Enrollment No
+              </Label>
               <Input
                 id="enrollmentNo"
                 value={editFormData.enrollmentNo || ''}
                 onChange={(e) => handleEditFormChange('enrollmentNo', e.target.value)}
-                placeholder="Enter enrollment number"
+                className="col-span-3"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
-              <Input
-                id="username"
-                value={editFormData.username || ''}
-                onChange={(e) => handleEditFormChange('username', e.target.value)}
-                placeholder="Enter username"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="emailId">Email</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="emailId" className="text-right">
+                Email
+              </Label>
               <Input
                 id="emailId"
                 type="email"
                 value={editFormData.emailId || ''}
                 onChange={(e) => handleEditFormChange('emailId', e.target.value)}
-                placeholder="Enter email address"
+                className="col-span-3"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="mobileNo">Mobile Number</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="mobileNo" className="text-right">
+                Mobile
+              </Label>
               <Input
                 id="mobileNo"
                 value={editFormData.mobileNo || ''}
                 onChange={(e) => handleEditFormChange('mobileNo', e.target.value)}
-                placeholder="Enter mobile number"
+                className="col-span-3"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="batchYear">Batch Year *</Label>
-              <Input
-                id="batchYear"
-                value={editFormData.batchYear || ''}
-                onChange={(e) => handleEditFormChange('batchYear', e.target.value)}
-                placeholder="Enter batch year"
-              />
-            </div>
-            
-            {/* Course Dropdown */}
-            <div className="space-y-2 w-full flex flex-col mb-4">
-              <Label htmlFor="course">Course *</Label>
-              <Select 
-                value={editFormData.course || ''} 
-                onValueChange={(value) => handleEditFormChange('course', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.length === 0 ? (
-                    <SelectItem value="" disabled>No courses available</SelectItem>
-                  ) : (
-                    courses.map((course) => (
-                      <SelectItem key={course._id} value={course.courseName}>
-                        {course.courseName}
-                      </SelectItem>
-                    )))
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Gender Dropdown */}
-            <div className="space-y-2 w-full flex flex-col mb-4">
-              <Label htmlFor="gender">Gender *</Label>
-              <Select 
-                value={editFormData.gender || ''} 
-                onValueChange={(value) => handleEditFormChange('gender', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={editFormData.dateOfBirth || ''}
-                onChange={(e) => handleEditFormChange('dateOfBirth', e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="admissionDate">Admission Date *</Label>
-              <Input
-                id="admissionDate"
-                type="date"
-                value={editFormData.admissionDate || ''}
-                onChange={(e) => handleEditFormChange('admissionDate', e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="fatherName">Father's Name</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="fatherName" className="text-right">
+                Father's Name
+              </Label>
               <Input
                 id="fatherName"
                 value={editFormData.fatherName || ''}
                 onChange={(e) => handleEditFormChange('fatherName', e.target.value)}
-                placeholder="Enter father's name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="motherName">Mother's Name</Label>
-              <Input
-                id="motherName"
-                value={editFormData.motherName || ''}
-                onChange={(e) => handleEditFormChange('motherName', e.target.value)}
-                placeholder="Enter mother's name"
-              />
-            </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={editFormData.address || ''}
-                onChange={(e) => handleEditFormChange('addressLine1', e.target.value)}
-                placeholder="Enter complete address"
+                className="col-span-3"
               />
             </div>
           </div>
-          
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isUpdating}
-            >
-              Cancel
-            </Button>
-            <Button 
+            <Button
+              type="submit"
               onClick={handleUpdateStudent}
-              disabled={isUpdating || !editFormData.fullName || !editFormData.enrollmentNo}
+              disabled={isUpdating}
             >
               {isUpdating ? (
                 <>
@@ -785,7 +583,7 @@ const Students = () => {
                   Updating...
                 </>
               ) : (
-                'Update Student'
+                'Save changes'
               )}
             </Button>
           </DialogFooter>

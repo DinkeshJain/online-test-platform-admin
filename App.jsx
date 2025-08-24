@@ -12,6 +12,7 @@ import Students from './pages/Students';
 import CourseManager from './pages/CourseManager';
 import Reports from './pages/Reports';
 import DataMaintenance from './pages/DataMaintenance';
+import AttendanceView from './pages/AttendanceView';
 import './App.css';
 import './index.css';
 
@@ -76,6 +77,14 @@ function AdminApp() {
                   <Students />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/attendance"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AttendanceView />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/courses" 
