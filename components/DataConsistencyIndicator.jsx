@@ -12,25 +12,75 @@ const DataConsistencyIndicator = () => {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    checkConsistency();
+
+    // Add a delay to ensure the API is properly initialized
+    const timer = setTimeout(() => {
+      console.log('🔍 Starting delayed consistency check...');
+      checkConsistency();
+    }, 2000); // Increased delay to 2 seconds
     
     // Check consistency every 5 minutes
     const interval = setInterval(checkConsistency, 300000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
-  const checkConsistency = async () => {
+  const checkConsistency = async (retryCount = 0) => {
     try {
       setChecking(true);
+      
+      const token = localStorage.getItem('token');
       const response = await api.get('/maintenance/quick-check');
-      setConsistencyData(response.data);
+      if (!response) {
+        throw new Error('No response received from server');
+      }
+      
+      const data = response.data || response;
+      setConsistencyData(data);
     } catch (error) {
-      console.error('Error checking data consistency:', error);
+      console.error(`❌ Error checking data consistency (attempt ${retryCount + 1}):`, error);
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error data:', error?.response?.data);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Error code:', error?.code);
+      console.error('❌ Error name:', error?.name);
+      console.error('❌ Full error object:', JSON.stringify(error, null, 2));
+      
+      try {
+        const testResponse = await fetch(api.defaults.baseURL.replace('/api', '/'));
+      } catch (connectError) {
+        console.error('❌ Basic connectivity test failed:', connectError);
+      }
+      
+      // Retry logic for timeout errors
+      if (error?.code === 'ECONNABORTED' && retryCount < 2) {
+        console.log(`🔄 Retrying due to timeout... (${retryCount + 1}/2)`);
+        setTimeout(() => checkConsistency(retryCount + 1), 2000);
+        return;
+      }
+      
+      let errorMessage = 'Failed to check consistency';
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.code === 'NETWORK_ERROR' || error?.code === 'ECONNREFUSED') {
+        errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+      } else if (error?.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server is taking too long to respond';
+      } else if (!error?.response) {
+        errorMessage = 'Network error - no response from server';
+      }
+      
       setConsistencyData({
         hasInconsistencies: true,
         totalOrphaned: -1,
-        error: 'Failed to check consistency',
+        error: errorMessage,
         details: {}
       });
     } finally {
@@ -70,7 +120,7 @@ const DataConsistencyIndicator = () => {
       {hasError ? (
         <>
           <AlertTriangle className="h-3 w-3 text-red-500" />
-          <span>Check failed</span>
+          <span title={consistencyData?.error}>Check failed</span>
         </>
       ) : isHealthy ? (
         <>

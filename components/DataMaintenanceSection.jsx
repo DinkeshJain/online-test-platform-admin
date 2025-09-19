@@ -21,10 +21,18 @@ const DataMaintenanceSection = () => {
     try {
       setChecking(true);
       const response = await api.get('/maintenance/quick-check');
-      setConsistencyData(response.data);
+      
+      console.log('✅ Maintenance check response:', response);
+      
+      // Handle both response.data and direct response cases
+      const data = response.data || response;
+      setConsistencyData(data);
     } catch (error) {
-      console.error('Error checking data consistency:', error);
-      toast.error('Failed to check data consistency');
+      console.error('❌ Error checking data consistency:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error message:', error.message);
+      
+      toast.error(error.response?.data?.message || error.message || 'Failed to check data consistency');
     } finally {
       setLoading(false);
       setChecking(false);
@@ -35,10 +43,18 @@ const DataMaintenanceSection = () => {
     try {
       setLoading(true);
       const response = await api.get('/maintenance/consistency-report');
-      setDetailedReport(response.data);
+      
+      console.log('✅ Detailed report response:', response);
+      
+      // Handle both response.data and direct response cases
+      const data = response.data || response;
+      setDetailedReport(data);
     } catch (error) {
-      console.error('Error getting detailed report:', error);
-      toast.error('Failed to get detailed consistency report');
+      console.error('❌ Error getting detailed report:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error message:', error.message);
+      
+      toast.error(error.response?.data?.message || error.message || 'Failed to get detailed consistency report');
     } finally {
       setLoading(false);
     }

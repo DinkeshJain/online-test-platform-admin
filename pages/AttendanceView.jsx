@@ -13,21 +13,28 @@ import AdminNavbar from '../components/AdminNavbar';
 import { DateUtils } from '../lib/dateUtils';
 
 const AttendanceView = () => {
+  // Date and Test Type states
+  const [submissionDates, setSubmissionDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [testTypes, setTestTypes] = useState([]);
+  const [selectedTestType, setSelectedTestType] = useState('');
+
+  // Data states
   const [attendanceData, setAttendanceData] = useState([]);
   const [filteredAttendanceData, setFilteredAttendanceData] = useState([]);
   const [courses, setCourses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [counts, setCounts] = useState({ finished: 0, started: 0, absent: 0 });
-  const [courseInfo, setCourseInfo] = useState(null);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage] = useState(25);
+  const [studentsPerPage] = useState(50); // Updated to 50 as requested
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -38,69 +45,124 @@ const AttendanceView = () => {
   
   const navigate = useNavigate();
 
+  // Fetch submission dates on component mount
   useEffect(() => {
-    fetchCourses();
+    fetchSubmissionDates();
   }, []);
 
+  // Fetch test types when date is selected
   useEffect(() => {
-    if (selectedCourse && selectedCourse !== 'null') {
-      setCurrentPage(1); // Reset to first page when changing course/subject
-      fetchAttendanceData(1); // Fetch first page
+    if (selectedDate) {
+      fetchTestTypes();
     } else {
-      // Reset data when no course is selected
-      setAttendanceData([]);
-      setFilteredAttendanceData([]);
-      setSubjects([]);
-      setCounts({ finished: 0, started: 0, absent: 0 });
-      setCourseInfo(null);
-      setPagination({
-        currentPage: 1,
-        totalPages: 1,
-        totalStudents: 0,
-        hasNextPage: false,
-        hasPrevPage: false
-      });
+      setTestTypes([]);
+      setSelectedTestType('');
     }
-  }, [selectedCourse, selectedSubject]); // Add selectedSubject to dependencies
+  }, [selectedDate]);
 
+  // Fetch data when both date and testType are selected
   useEffect(() => {
-    filterData();
-  }, [attendanceData, searchTerm, selectedStatus]); // Remove selectedSubject from here since it triggers backend call
+    if (selectedDate && selectedTestType) {
+      setCurrentPage(1);
+      fetchAttendanceData(1);
+    } else {
+      // Reset data when prerequisites are not met
+      resetData();
+    }
+  }, [selectedDate, selectedTestType, selectedCourse, selectedStatus]);
 
-  const fetchCourses = async () => {
+  // Handle search with debouncing
+  useEffect(() => {
+    if (!selectedDate || !selectedTestType) return;
+    
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim()) {
+        fetchAttendanceData(1, searchTerm);
+      } else {
+        fetchAttendanceData(currentPage);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Client-side filtering for current page data
+  useEffect(() => {
+    setFilteredAttendanceData(attendanceData);
+  }, [attendanceData]);
+
+  const resetData = () => {
+    setAttendanceData([]);
+    setFilteredAttendanceData([]);
+    setCourses([]);
+    setSubjects([]);
+    setCounts({ finished: 0, started: 0, absent: 0 });
+    setPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalStudents: 0,
+      hasNextPage: false,
+      hasPrevPage: false
+    });
+  };
+
+  const fetchSubmissionDates = async () => {
     try {
-      const response = await api.get('/courses');
-      setCourses(response.data.courses || []);
+      const response = await api.get('/submissions/attendance/dates');
+      setSubmissionDates(response.data.dates || []);
     } catch (error) {
-      console.error('Error fetching courses:', error);
-      toast.error('Failed to load courses');
+      console.error('Error fetching submission dates:', error);
+      toast.error('Failed to load submission dates');
+    }
+  };
+
+  const fetchTestTypes = async () => {
+    try {
+      const response = await api.get(`/submissions/attendance/test-types/${selectedDate}`);
+      setTestTypes(response.data.testTypes || []);
+    } catch (error) {
+      console.error('Error fetching test types:', error);
+      toast.error('Failed to load test types');
     }
   };
 
   const fetchAttendanceData = async (page = currentPage, search = '') => {
-    if (!selectedCourse || selectedCourse === 'null' || selectedCourse === '') {
+    if (!selectedDate || !selectedTestType) {
       return;
     }
+    
     setLoading(true);
     try {
-      console.log('🔄 Fetching attendance data:', { page, selectedCourse, selectedSubject, search });
+      console.log('🔄 Fetching attendance data:', { 
+        date: selectedDate, 
+        testType: selectedTestType, 
+        page, 
+        selectedCourse, 
+        selectedStatus,
+        search 
+      });
       
       // Build query parameters
       const params = new URLSearchParams({
+        date: selectedDate,
+        testType: selectedTestType,
         page: page.toString(),
-        limit: studentsPerPage.toString(),
-        includeCounts: page === 1 ? 'true' : 'false' // Only calculate counts on first page
+        limit: studentsPerPage.toString()
       });
       
-      if (selectedSubject !== 'all') {
-        params.append('subject', selectedSubject);
+      if (selectedCourse && selectedCourse !== 'all') {
+        params.append('course', selectedCourse);
+      }
+      
+      if (selectedStatus && selectedStatus !== 'all') {
+        params.append('status', selectedStatus);
       }
       
       if (search.trim()) {
         params.append('search', search.trim());
       }
 
-      const response = await api.get(`/submissions/attendance/${selectedCourse}?${params}`);
+      const response = await api.get(`/submissions/attendance/data?${params}`);
       if (!response || !response.data) {
         throw new Error('No data received from server');
       }
@@ -113,9 +175,9 @@ const AttendanceView = () => {
       });
       
       setAttendanceData(data.attendanceData || []);
+      setCourses(data.courses || []);
       setSubjects(data.subjects || []);
       setCounts(data.counts || { finished: 0, started: 0, absent: 0 });
-      setCourseInfo(data.course);
       setPagination(data.pagination || {
         currentPage: 1,
         totalPages: 1,
@@ -125,60 +187,18 @@ const AttendanceView = () => {
       });
       setCurrentPage(page);
 
-      // Reset search when changing filters
+      // Reset search when changing filters (but not when actively searching)
       if (page === 1 && !search) {
         setSearchTerm('');
       }
     } catch (error) {
       console.error('Error fetching attendance data:', error);
       toast.error('Failed to load attendance data');
-      setAttendanceData([]);
-      setSubjects([]);
-      setCounts({ finished: 0, started: 0, absent: 0 });
-      setPagination({
-        currentPage: 1,
-        totalPages: 1,
-        totalStudents: 0,
-        hasNextPage: false,
-        hasPrevPage: false
-      });
+      resetData();
     } finally {
       setLoading(false);
     }
   };
-
-  const filterData = () => {
-    let filtered = attendanceData;
-
-    // Apply status filter (this is now client-side filtering on the current page)
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(studentData => {
-        if (selectedSubject === 'all') {
-          // Check if any subject has the selected status
-          return Object.values(studentData.testStatuses).some(testStatus => 
-            testStatus.status === selectedStatus
-          );
-        } else {
-          // Check specific subject status
-          const testStatus = studentData.testStatuses[selectedSubject];
-          return testStatus && testStatus.status === selectedStatus;
-        }
-      });
-    }
-
-    setFilteredAttendanceData(filtered);
-  };
-
-  // Handle search with debouncing for performance  
-  useEffect(() => {
-    if (!selectedCourse || selectedCourse === 'null' || !searchTerm.trim()) return;
-    
-    const timeoutId = setTimeout(() => {
-      fetchAttendanceData(1, searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]); // Only searchTerm to avoid conflicts with course/subject changes
 
   const handleSearch = (searchValue) => {
     setSearchTerm(searchValue);
@@ -205,47 +225,40 @@ const AttendanceView = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Finished':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Finished
-          </Badge>
-        );
-      case 'Started':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-            <Clock className="w-3 h-3 mr-1" />
-            Started
-          </Badge>
-        );
-      case 'Absent':
-      default:
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
-            <XCircle className="w-3 h-3 mr-1" />
-            Absent
-          </Badge>
-        );
+  const getStatusBadge = (hasSubmissions) => {
+    if (hasSubmissions) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Finished
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+          <XCircle className="w-3 h-3 mr-1" />
+          Absent
+        </Badge>
+      );
     }
   };
 
-  // Since we now have server-side pagination, we don't need client-side slicing
-  // The attendanceData already contains only the current page's data
-  const currentStudents = filteredAttendanceData; // This is already the current page from server
-  
-  // Use server pagination info instead of calculating client-side
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Use server pagination info
+  const currentStudents = filteredAttendanceData;
   const totalPages = pagination.totalPages;
   const indexOfFirstStudent = (pagination.currentPage - 1) * studentsPerPage;
   const indexOfLastStudent = Math.min(indexOfFirstStudent + studentsPerPage, pagination.totalStudents);
-
-  // Determine which subjects to display in table
-  const displaySubjects = selectedSubject === 'all' ? subjects : subjects.filter(s => s.code === selectedSubject);
-  
-  // Check if detailed view should be shown (when specific subject is selected)
-  const showDetailedView = selectedSubject !== 'all';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -267,81 +280,113 @@ const AttendanceView = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Student Attendance View</h1>
               <p className="text-gray-600 mt-1">
-                Monitor student participation and test completion status
+                Monitor student participation and test completion status by exam date
               </p>
             </div>
           </div>
         </div>
 
-        {/* Improved Filter Section with better layout */}
+        {/* Step-by-step Filter Section */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
-              Filters
+              Select Exam Details
             </CardTitle>
+            <CardDescription>
+              Follow the steps: 1) Select exam date → 2) Select test type → 3) Apply additional filters
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Course Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Step 1: Date Selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Course</label>
-                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  1. Exam Date
+                </label>
+                <Select value={selectedDate} onValueChange={setSelectedDate}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Course" />
+                    <SelectValue placeholder="Select Date" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="null">All Courses</SelectItem>
-                    {courses.map((course) => (
-                      <SelectItem key={course._id} value={course._id}>
-                        {course.courseCode} - {course.courseName}
+                    {submissionDates.map((dateInfo) => (
+                      <SelectItem key={dateInfo.date} value={dateInfo.date}>
+                        {formatDate(dateInfo.date)} ({dateInfo.count} submissions)
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Subject Selection */}
+              {/* Step 2: Test Type Selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Subject</label>
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Target className="w-4 h-4" />
+                  2. Test Type
+                </label>
                 <Select 
-                  value={selectedSubject} 
-                  onValueChange={setSelectedSubject}
-                  disabled={!selectedCourse}
+                  value={selectedTestType} 
+                  onValueChange={setSelectedTestType}
+                  disabled={!selectedDate}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Subject" />
+                    <SelectValue placeholder="Select Test Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Subjects</SelectItem>
-                    {subjects.map((subject) => (
-                      <SelectItem key={subject.code} value={subject.code}>
-                        {subject.code} - {subject.name}
+                    {testTypes.map((typeInfo) => (
+                      <SelectItem key={typeInfo.testType} value={typeInfo.testType}>
+                        {typeInfo.testType.charAt(0).toUpperCase() + typeInfo.testType.slice(1)} ({typeInfo.count} submissions)
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Status Filter */}
+              {/* Step 3: Course Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <label className="text-sm font-medium text-gray-700">3. Course (Optional)</label>
+                <Select 
+                  value={selectedCourse} 
+                  onValueChange={setSelectedCourse}
+                  disabled={!selectedDate || !selectedTestType}
+                >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Status" />
+                    <SelectValue placeholder="All Courses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course.courseCode} value={course.courseCode}>
+                        {course.courseCode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Step 4: Status Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">4. Status (Optional)</label>
+                <Select 
+                  value={selectedStatus} 
+                  onValueChange={setSelectedStatus}
+                  disabled={!selectedDate || !selectedTestType}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="Finished">Finished</SelectItem>
-                    <SelectItem value="Started">Started</SelectItem>
                     <SelectItem value="Absent">Absent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Search */}
+              {/* Step 5: Search */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Search</label>
+                <label className="text-sm font-medium text-gray-700">5. Search (Optional)</label>
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <Input
@@ -349,7 +394,7 @@ const AttendanceView = () => {
                     value={searchTerm}
                     onChange={(e) => handleSearch(e.target.value)}
                     className="pl-10"
-                    disabled={!selectedCourse}
+                    disabled={!selectedDate || !selectedTestType}
                   />
                 </div>
               </div>
@@ -357,28 +402,28 @@ const AttendanceView = () => {
           </CardContent>
         </Card>
 
-        {!selectedCourse ? (
+        {!selectedDate || !selectedTestType ? (
           <Card>
             <CardContent className="py-12 text-center">
               <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                Select a Course
+                Select Exam Date and Test Type
               </h3>
               <p className="text-gray-500">
-                Choose a course from the dropdown to view student attendance data.
+                Please select both an exam date and test type to view attendance data.
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Finished {selectedSubject !== 'all' && `(${selectedSubject})`}
+                        Students Finished
                       </p>
                       <p className="text-3xl font-bold text-green-600">{counts.finished}</p>
                     </div>
@@ -392,21 +437,7 @@ const AttendanceView = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Started {selectedSubject !== 'all' && `(${selectedSubject})`}
-                      </p>
-                      <p className="text-3xl font-bold text-yellow-600">{counts.started}</p>
-                    </div>
-                    <Clock className="w-8 h-8 text-yellow-600" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Absent {selectedSubject !== 'all' && `(${selectedSubject})`}
+                        Students Absent
                       </p>
                       <p className="text-3xl font-bold text-red-600">{counts.absent}</p>
                     </div>
@@ -420,11 +451,16 @@ const AttendanceView = () => {
             <Card className="mb-6">
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
-                    Showing {filteredAttendanceData.length} students 
-                    {selectedSubject !== 'all' && ` for ${selectedSubject}`}
-                    {selectedStatus !== 'all' && ` with status: ${selectedStatus}`}
-                  </p>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm text-gray-600">
+                      Showing {filteredAttendanceData.length} students for <strong>{selectedTestType}</strong> exam on <strong>{formatDate(selectedDate)}</strong>
+                      {selectedCourse && selectedCourse !== 'all' && ` from course ${selectedCourse}`}
+                      {selectedStatus !== 'all' && ` with status: ${selectedStatus}`}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Page {pagination.currentPage} of {pagination.totalPages} • Total: {pagination.totalStudents} students
+                    </p>
+                  </div>
                   {loading && (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -451,10 +487,7 @@ const AttendanceView = () => {
                     No Data Found
                   </h3>
                   <p className="text-gray-500">
-                    {attendanceData.length === 0 
-                      ? "No students or tests found for the selected course." 
-                      : "No students match the current search criteria."
-                    }
+                    No students match the current search criteria for this exam.
                   </p>
                 </CardContent>
               </Card>
@@ -462,168 +495,109 @@ const AttendanceView = () => {
               <Card>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    {showDetailedView ? (
-                      /* Detailed View for Specific Subject */
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b bg-gray-50">
-                            <th className="text-left p-4 font-semibold text-gray-900">Enrollment No.</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Student Name</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Status</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Questions Attempted</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Score</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Test Started</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Last Saved</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Submitted</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Time Spent (min)</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Actions</th>
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="text-left p-4 font-semibold text-gray-900">Enrollment No.</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Student Name</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Course</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Subject</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Test Type</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Questions Attempted</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Score</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Test Started</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Last Saved</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Submitted</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Time Spent (min)</th>
+                          <th className="text-left p-4 font-semibold text-gray-900">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentStudents.map((submissionData, index) => (
+                          <tr key={`${submissionData.student._id}-${submissionData.subject?.code || index}`} className="border-b hover:bg-gray-50">
+                            <td className="p-4">{submissionData.student.enrollmentNumber}</td>
+                            <td className="p-4">{submissionData.student.name}</td>
+                            <td className="p-4">{submissionData.student.course}</td>
+                            <td className="p-4">
+                              {submissionData.subject ? (
+                                <Badge variant="outline">{submissionData.subject.code}</Badge>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <Badge variant="secondary">{submissionData.testType || selectedTestType}</Badge>
+                            </td>
+                            <td className="p-4">
+                              {submissionData.submission ? (
+                                <div className="flex items-center gap-1">
+                                  <Target className="w-4 h-4 text-blue-600" />
+                                  {submissionData.submission.answeredQuestions || 'N/A'}/{submissionData.submission.totalQuestions || 'N/A'}
+                                </div>
+                              ) : 'N/A'}
+                            </td>
+                            <td className="p-4">
+                              {submissionData.submission ? (
+                                <div className="flex items-center gap-1">
+                                  <Trophy className="w-4 h-4 text-yellow-600" />
+                                  {submissionData.submission.score || 0}/{submissionData.submission.totalQuestions || 'N/A'}
+                                </div>
+                              ) : 'N/A'}
+                            </td>
+                            <td className="p-4 text-sm">
+                              {submissionData.submission?.testStartedAt ? 
+                                new Date(submissionData.submission.testStartedAt).toLocaleString() : 'N/A'}
+                            </td>
+                            <td className="p-4 text-sm">
+                              {submissionData.submission?.lastSavedAt ? 
+                                new Date(submissionData.submission.lastSavedAt).toLocaleString() : 'N/A'}
+                            </td>
+                            <td className="p-4 text-sm">
+                              {submissionData.submission?.submittedAt ? 
+                                new Date(submissionData.submission.submittedAt).toLocaleString() : 'N/A'}
+                            </td>
+                            <td className="p-4">
+                              {submissionData.submission?.timeSpent ? 
+                                Math.round(submissionData.submission.timeSpent / 60) : 'N/A'}
+                            </td>
+                            <td className="p-4">
+                              {submissionData.submission?._id && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                      <Trash2 className="w-4 h-4 mr-1" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete the submission for {submissionData.student.name} 
+                                        in {submissionData.subject?.code || 'this test'}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteSubmission(
+                                          submissionData.submission._id,
+                                          submissionData.student.name,
+                                          submissionData.subject?.code || 'test'
+                                        )}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {currentStudents.map((studentData, index) => {
-                            const testStatus = studentData.testStatuses[selectedSubject];
-                            const detailedInfo = testStatus?.detailedInfo;
-                            
-                            return (
-                              <tr key={studentData.student._id} className="border-b hover:bg-gray-50">
-                                <td className="p-4">{studentData.student.enrollmentNumber}</td>
-                                <td className="p-4">{studentData.student.name}</td>
-                                <td className="p-4">{getStatusBadge(testStatus?.status || 'Absent')}</td>
-                                <td className="p-4">
-                                  {detailedInfo ? (
-                                    <div className="flex items-center gap-1">
-                                      <Target className="w-4 h-4 text-blue-600" />
-                                      {detailedInfo.questionsAttempted}/70
-                                    </div>
-                                  ) : 'N/A'}
-                                </td>
-                                <td className="p-4">
-                                  {detailedInfo ? (
-                                    <div className="flex items-center gap-1">
-                                      <Trophy className="w-4 h-4 text-yellow-600" />
-                                      {detailedInfo.score}/70
-                                    </div>
-                                  ) : 'N/A'}
-                                </td>
-                                <td className="p-4 text-sm">
-                                  {detailedInfo?.testStartedAt || 'N/A'}
-                                </td>
-                                <td className="p-4 text-sm">
-                                  {detailedInfo?.lastSavedAt || 'N/A'}
-                                </td>
-                                <td className="p-4 text-sm">
-                                  {detailedInfo?.submittedAt || 'N/A'}
-                                </td>
-                                <td className="p-4">
-                                  {detailedInfo ? Math.round(detailedInfo.timeSpent / 60) : 'N/A'}
-                                </td>
-                                <td className="p-4">
-                                  {testStatus?.status === 'Finished' && testStatus.submissionId && (
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                          <Trash2 className="w-4 h-4 mr-1" />
-                                          Delete
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Delete Submission</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to delete the submission for {studentData.student.name} 
-                                            in {selectedSubject}? This action cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => handleDeleteSubmission(
-                                              testStatus.submissionId,
-                                              studentData.student.name,
-                                              selectedSubject
-                                            )}
-                                            className="bg-red-600 hover:bg-red-700"
-                                          >
-                                            Delete
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    ) : (
-                      /* Overview Table for All Subjects */
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b bg-gray-50">
-                            <th className="text-left p-4 font-semibold text-gray-900">Enrollment No.</th>
-                            <th className="text-left p-4 font-semibold text-gray-900">Student Name</th>
-                            {displaySubjects.map((subject) => (
-                              <th key={subject.code} className="text-center p-4 font-semibold text-gray-900">
-                                {subject.code}<br />
-                                <span className="text-xs font-normal text-gray-600">{subject.name}</span>
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentStudents.map((studentData, index) => (
-                            <tr key={studentData.student._id} className="border-b hover:bg-gray-50">
-                              <td className="p-4">{studentData.student.enrollmentNumber}</td>
-                              <td className="p-4">{studentData.student.name}</td>
-                              {displaySubjects.map((subject) => (
-                                <td key={subject.code} className="p-4 text-center">
-                                  {studentData.testStatuses[subject.code] ? (
-                                    <>
-                                      {getStatusBadge(studentData.testStatuses[subject.code].status)}
-                                      {studentData.testStatuses[subject.code].status === 'Finished' && 
-                                       studentData.testStatuses[subject.code].submissionId && (
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="ml-1 text-red-600 hover:text-red-700">
-                                              <Trash2 className="w-3 h-3" />
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>Delete Submission</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                Are you sure you want to delete the submission for {studentData.student.name} 
-                                                in {subject.code}? This action cannot be undone.
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                              <AlertDialogAction
-                                                onClick={() => handleDeleteSubmission(
-                                                  studentData.testStatuses[subject.code].submissionId,
-                                                  studentData.student.name,
-                                                  subject.code
-                                                )}
-                                                className="bg-red-600 hover:bg-red-700"
-                                              >
-                                                Delete
-                                              </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                      )}
-                                    </>
-                                  ) : (
-                                    getStatusBadge('Absent')
-                                  )}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Pagination */}

@@ -62,25 +62,44 @@ const CreateTest = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchCourses();
-    if (isEditing) {
-      fetchTestForEdit();
-    }
+    const initializeData = async () => {
+      try {
+        // Always fetch courses first
+        const coursesData = await fetchCourses();
+        
+        // Then fetch test data if editing (after courses are loaded)
+        if (isEditing) {
+          await fetchTestForEdit(coursesData);
+        }
+      } catch (error) {
+        console.error('Error initializing data:', error);
+      }
+    };
+    
+    initializeData();
   }, [testId, isEditing]);
 
   const fetchCourses = async () => {
     try {
       const response = await api.get('/courses');
       setCourses(response.data.courses);
+      return response.data.courses; // Return the courses
     } catch (error) {
+      console.error('Error fetching courses:', error);
       // Don't show error toast for courses as it's optional
+      return [];
     }
   };
 
-  const fetchTestForEdit = async () => {
+  const fetchTestForEdit = async (coursesData = null) => {
     try {
       const response = await api.get(`/tests/${testId}/edit`);
       const test = response.data.test;
+
+      // Use passed courses data or fallback to state
+      const availableCourses = coursesData || courses;
+      console.log('Test data from server:', test);
+      console.log('Available courses:', availableCourses);
 
       setTestData({
         duration: test.duration,
@@ -106,6 +125,9 @@ const CreateTest = () => {
           correctAnswer: q.correctAnswer
         }))
       });
+
+      console.log('Set course ID:', test.course?._id);
+      console.log('Set subject:', test.subject);
     } catch (error) {
       console.error('Error fetching test for edit:', error);
       toast.error('Failed to load test for editing');

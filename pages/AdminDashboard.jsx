@@ -53,12 +53,8 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      console.log('🔄 Starting fetchData...');
       const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      console.log('🔑 Auth token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
-      console.log('👤 User data:', user ? JSON.parse(user) : 'Missing');
-      
+      const user = localStorage.getItem('user');      
       if (!token) {
         console.error('❌ No authentication token found!');
         toast.error('Please log in to access admin dashboard');
@@ -68,9 +64,7 @@ const AdminDashboard = () => {
       const [testsResponse, studentsResponse, coursesResponse] = await Promise.all([
         (async () => {
           try {
-            console.log('🚀 Making request to /tests/admin...');
             const response = await api.get('/tests/admin');
-            console.log('✅ Tests API success:', response);
             return response;
           } catch (error) {
             console.error('❌ Tests API failed:', error);
@@ -90,17 +84,6 @@ const AdminDashboard = () => {
           return { data: { courses: [] } };
         }) // Fallback for courses
       ]);
-      
-      console.log('🔍 Raw API responses:');
-      console.log('Tests response:', testsResponse);
-      console.log('Students response:', studentsResponse);
-      console.log('Courses response:', coursesResponse);
-      
-      console.log('API Responses:', {
-        tests: testsResponse?.data?.tests?.length || 0,
-        students: studentsResponse?.data?.count || 0,
-        courses: coursesResponse?.data?.courses?.length || 0
-      });
       
       setTests(testsResponse.data.tests || []);
       setStudentCount(studentsResponse.data.count || 0);
