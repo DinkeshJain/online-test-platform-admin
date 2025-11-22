@@ -1,18 +1,23 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
+import LazyWrapper from './components/LazyWrapper';
+import RoutePreloader from './components/RoutePreloader';
 import AdminLogin from './pages/AdminLogin';
 import AdminRegister from './pages/AdminRegister';
-import AdminDashboard from './pages/AdminDashboard';
-import EvaluatorManagement from './pages/EvaluatorManagement';
-import CreateTest from './pages/CreateTest';
-import BulkUpload from './pages/BulkUpload';
-import Students from './pages/Students';
-import CourseManager from './pages/CourseManager';
-import Reports from './pages/Reports';
-import DataMaintenance from './pages/DataMaintenance';
-import AttendanceView from './pages/AttendanceView';
+
+// Lazy load test management components for better performance
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const CreateTest = React.lazy(() => import('./pages/CreateTest'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const EvaluatorManagement = React.lazy(() => import('./pages/EvaluatorManagement'));
+const BulkUpload = React.lazy(() => import('./pages/BulkUpload'));
+const Students = React.lazy(() => import('./pages/Students'));
+const CourseManager = React.lazy(() => import('./pages/CourseManager'));
+const DataMaintenance = React.lazy(() => import('./pages/DataMaintenance'));
+const AttendanceView = React.lazy(() => import('./pages/AttendanceView'));
 import './App.css';
 import './index.css';
 
@@ -21,6 +26,7 @@ function AdminApp() {
     <AuthProvider>
       <Router>
         <div className="App">
+          <RoutePreloader />
           <Toaster
             position="top-right"
             toastOptions={{
@@ -50,7 +56,9 @@ function AdminApp() {
               path="/dashboard" 
               element={
                 <ProtectedRoute adminOnly>
-                  <AdminDashboard />
+                  <LazyWrapper enhancedLoader>
+                    <AdminDashboard />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -58,7 +66,9 @@ function AdminApp() {
               path="/create-test" 
               element={
                 <ProtectedRoute adminOnly>
-                  <CreateTest />
+                  <LazyWrapper enhancedLoader>
+                    <CreateTest />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -66,7 +76,9 @@ function AdminApp() {
               path="/bulk-upload" 
               element={
                 <ProtectedRoute adminOnly>
-                  <BulkUpload />
+                  <LazyWrapper>
+                    <BulkUpload />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -74,7 +86,9 @@ function AdminApp() {
               path="/students" 
               element={
                 <ProtectedRoute adminOnly>
-                  <Students />
+                  <LazyWrapper>
+                    <Students />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -82,7 +96,9 @@ function AdminApp() {
               path="/attendance"
               element={
                 <ProtectedRoute adminOnly>
-                  <AttendanceView />
+                  <LazyWrapper>
+                    <AttendanceView />
+                  </LazyWrapper>
                 </ProtectedRoute>
               }
             />
@@ -90,7 +106,9 @@ function AdminApp() {
               path="/courses" 
               element={
                 <ProtectedRoute adminOnly>
-                  <CourseManager />
+                  <LazyWrapper>
+                    <CourseManager />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -98,7 +116,9 @@ function AdminApp() {
               path="/evaluators" 
               element={
                 <ProtectedRoute adminOnly>
-                  <EvaluatorManagement />
+                  <LazyWrapper enhancedLoader>
+                    <EvaluatorManagement />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -106,7 +126,9 @@ function AdminApp() {
               path="/reports" 
               element={
                 <ProtectedRoute adminOnly>
-                  <Reports />
+                  <LazyWrapper enhancedLoader>
+                    <Reports />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -114,7 +136,9 @@ function AdminApp() {
               path="/data-maintenance" 
               element={
                 <ProtectedRoute adminOnly>
-                  <DataMaintenance />
+                  <LazyWrapper>
+                    <DataMaintenance />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />
@@ -122,7 +146,9 @@ function AdminApp() {
               path="/edit-test/:testId" 
               element={
                 <ProtectedRoute adminOnly>
-                  <CreateTest />
+                  <LazyWrapper enhancedLoader>
+                    <CreateTest />
+                  </LazyWrapper>
                 </ProtectedRoute>
               } 
             />

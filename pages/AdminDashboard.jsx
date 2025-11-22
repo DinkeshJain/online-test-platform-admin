@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 
 const AdminDashboard = () => {
   const [tests, setTests] = useState([]);
+  const [totalTestCount, setTotalTestCount] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
   const [courseCount, setCourseCount] = useState(0);
   const [courses, setCourses] = useState([]);
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
       const [testsResponse, studentsResponse, coursesResponse] = await Promise.all([
         (async () => {
           try {
-            const response = await api.get('/tests/admin');
+            const response = await api.get('/tests/admin?limit=100');
             return response;
           } catch (error) {
             console.error('❌ Tests API failed:', error);
@@ -86,6 +87,7 @@ const AdminDashboard = () => {
       ]);
       
       setTests(testsResponse.data.tests || []);
+      setTotalTestCount(testsResponse.data.pagination?.total || testsResponse.data.tests?.length || 0);
       setStudentCount(studentsResponse.data.count || 0);
       setCourses(coursesResponse.data.courses || []);
       setCourseCount(coursesResponse.data.courses?.length || 0);
@@ -614,7 +616,7 @@ const AdminDashboard = () => {
                 <FileText className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Tests</p>
-                  <p className="text-2xl font-bold text-gray-900">{tests.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalTestCount}</p>
                 </div>
               </div>
             </CardContent>
