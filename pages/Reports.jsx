@@ -20,6 +20,11 @@ const Reports = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('');
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [studentsPerPage] = useState(50); // 50 students per page
+  const [totalStudents, setTotalStudents] = useState(0);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -76,22 +81,40 @@ const Reports = () => {
     }
   };
 
-  // Load reports for selected subject (lazy load)
-  const loadSubjectReport = async (subjectCode, examType) => {
+  // Load reports for selected subject with pagination (lazy load)
+  const loadSubjectReport = async (subjectCode, examType, page = 1) => {
     setSelectedSubject(subjectCode);
     setSelectedExamType(examType);
-    if (!reportsBySubject[subjectCode] || reportsBySubject[subjectCode].examType !== examType) {
+    setCurrentPage(page);
+    
+    const cacheKey = `${subjectCode}_${examType}_${page}`;
+    
+    if (!reportsBySubject[cacheKey]) {
       setLoading(true);
       try {
+        const params = new URLSearchParams({
+          examType: examType || '',
+          page: page.toString(),
+          limit: studentsPerPage.toString()
+        });
+        
         const res = await api.get(
-          `/results/reports/${selectedCourse}/${subjectCode}?examType=${examType}`
+          `/results/reports/${selectedCourse}/${subjectCode}?${params.toString()}`
         );
+        
         setReportsBySubject(prev => ({
           ...prev,
-          [subjectCode]: { ...res.data.report, examType }
+          [cacheKey]: { ...res.data.report, examType, page }
         }));
+        
+        // Update pagination info
+        if (res.data.report.pagination) {
+          setTotalStudents(res.data.report.pagination.totalStudents);
+        }
+        
         setError('');
       } catch (err) {
+        console.error('Error loading report:', err);
         toast.error('Failed to load report data');
         setError('Failed to load report data');
       } finally {
@@ -576,7 +599,10 @@ const Reports = () => {
                 <label className="text-sm font-medium mb-2 block">Course</label>
                 <select
                   value={selectedCourse}
-                  onChange={e => setSelectedCourse(e.target.value)}
+                  onChange={e => {
+                    setSelectedCourse(e.target.value);
+                    setCurrentPage(1); // Reset pagination when course changes
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 >
                   <option value="">-- Select Course --</option>
@@ -592,7 +618,14 @@ const Reports = () => {
                 <label className="text-sm font-medium mb-2 block">Subject</label>
                 <select
                   value={selectedSubject}
-                  onChange={e => loadSubjectReport(e.target.value, selectedExamType)}
+                  onChange={e => {
+                    if (e.target.value) {
+                      setCurrentPage(1); // Reset pagination when subject changes
+                      loadSubjectReport(e.target.value, selectedExamType, 1);
+                    } else {
+                      setSelectedSubject('');
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-md"
                   disabled={!selectedCourse}
                 >
@@ -609,7 +642,13 @@ const Reports = () => {
                 <label className="text-sm font-medium mb-2 block">Exam Type</label>
                 <select
                   value={selectedExamType}
-                  onChange={e => setSelectedExamType(e.target.value)}
+                  onChange={e => {
+                    setSelectedExamType(e.target.value);
+                    if (selectedSubject) {
+                      setCurrentPage(1); // Reset pagination when exam type changes
+                      loadSubjectReport(selectedSubject, e.target.value, 1);
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-md"
                   disabled={!selectedSubject}
                 >
@@ -640,71 +679,115 @@ const Reports = () => {
         )}
 
         {/* Subject Report Display */}
-        {selectedSubject && reportsBySubject[selectedSubject] && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BookOpen className="h-5 w-5 mr-2" />
-                {reportsBySubject[selectedSubject].subject.subjectName}
-              </CardTitle>
-              <p className="text-sm text-gray-600">
-                Course: {reportsBySubject[selectedSubject].course.courseName} ({reportsBySubject[selectedSubject].course.courseCode})
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {reportsBySubject[selectedSubject].studentResults.length}
+        {selectedSubject && (() => {
+          const cacheKey = `${selectedSubject}_${selectedExamType}_${currentPage}`;
+          const report = reportsBySubject[cacheKey];
+          return report && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  {report.subject.subjectName}
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Course: {report.course.courseName} ({report.course.courseCode})
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {report.statistics.studentsOnCurrentPage}
+                    </div>
+                    <div className="text-sm text-gray-600">Students (this page)</div>
                   </div>
-                  <div className="text-sm text-gray-600">Students</div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {report.tests.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Tests</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {report.statistics.totalStudentsInCourse}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Students</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {reportsBySubject[selectedSubject].tests.length}
-                  </div>
-                  <div className="text-sm text-gray-600">Tests</div>
+
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    onClick={() => exportToExcel(report, 'official')}
+                    variant="outline"
+                    className="flex items-center"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export Official
+                  </Button>
+
+                  <Button
+                    onClick={() => exportToExcel(report, 'demo')}
+                    variant="outline"
+                    className="flex items-center"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export Demo
+                  </Button>
                 </div>
-                {/* <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {getInternalMarksStats(reportsBySubject[selectedSubject]).percentage}%
+                
+                {/* Pagination Controls */}
+                {report.pagination && (
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-sm text-gray-600">
+                      Showing {report.statistics.studentsOnCurrentPage} of{' '}
+                      {report.statistics.totalStudentsInCourse} students
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!report.pagination.hasPreviousPage || loading}
+                        onClick={() => {
+                          const newPage = currentPage - 1;
+                          loadSubjectReport(selectedSubject, selectedExamType, newPage);
+                        }}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm px-2">
+                        Page {report.pagination.currentPage} of {report.pagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!report.pagination.hasNextPage || loading}
+                        onClick={() => {
+                          const newPage = currentPage + 1;
+                          loadSubjectReport(selectedSubject, selectedExamType, newPage);
+                        }}
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">Internal Marks</div>
-                </div> */}
-              </div>
-
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Button
-                  onClick={() => exportToExcel(reportsBySubject[selectedSubject], 'official')}
-                  variant="outline"
-                  className="flex items-center"
-                >
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export Official
-                </Button>
-
-                <Button
-                  onClick={() => exportToExcel(reportsBySubject[selectedSubject], 'demo')}
-                  variant="outline"
-                  className="flex items-center"
-                >
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export Demo
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* No data message */}
-        {selectedSubject && !reportsBySubject[selectedSubject] && !loading && (
-          <Card>
-            <CardContent className="text-center py-8">
-              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600">No report data available for this subject.</p>
-            </CardContent>
-          </Card>
-        )}
+        {selectedSubject && (() => {
+          const cacheKey = `${selectedSubject}_${selectedExamType}_${currentPage}`;
+          return !reportsBySubject[cacheKey] && !loading && (
+            <Card>
+              <CardContent className="text-center py-8">
+                <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600">No report data available for this subject.</p>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
 
       {/* Question Marking Modal */}

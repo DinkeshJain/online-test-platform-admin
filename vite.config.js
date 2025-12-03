@@ -32,8 +32,5 @@ export default defineConfig({
       }
     }
   },
-  // Use relative base for better compatibility with different deployment paths
   base: './'
 })
-
-

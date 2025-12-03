@@ -101,19 +101,28 @@ const CreateTest = () => {
       console.log('Test data from server:', test);
       console.log('Available courses:', availableCourses);
 
+      // Handle course selection for editing - match by courseCode or _id
+      let courseId = '';
+      if (test.course?._id) {
+        // Old format with course reference
+        courseId = test.course._id;
+      } else if (test.courseCode && availableCourses) {
+        // New format with courseCode - find matching course
+        const matchingCourse = availableCourses.find(course => course.courseCode === test.courseCode);
+        courseId = matchingCourse?._id || '';
+      }
+
       setTestData({
         duration: test.duration,
-        course: test.course?._id || '',
+        course: courseId,
         subject: {
           subjectCode: test.subject?.subjectCode || '',
           subjectName: test.subject?.subjectName || ''
         },
         activeFrom: test.activeFrom ?
-          new Date(new Date(test.activeFrom).getTime() - new Date().getTimezoneOffset() * 60000)
-            .toISOString().slice(0, 16) : '',
+          new Date(test.activeFrom).toISOString().slice(0, 16) : '',
         activeTo: test.activeTo ?
-          new Date(new Date(test.activeTo).getTime() - new Date().getTimezoneOffset() * 60000)
-            .toISOString().slice(0, 16) : '',
+          new Date(test.activeTo).toISOString().slice(0, 16) : '',
         shuffleQuestions: test.shuffleQuestions !== undefined ? test.shuffleQuestions : true,
         shuffleOptions: test.shuffleOptions !== undefined ? test.shuffleOptions : true,
         testType: test.testType || 'official',
@@ -272,9 +281,15 @@ const CreateTest = () => {
     }
 
     try {
-      // Prepare data with proper date formatting
+      // Find the selected course to get courseCode and courseName
+      const selectedCourse = courses.find(course => course._id === testData.course);
+      
+      // Prepare data with proper date formatting and course information
       const submitData = {
         ...testData,
+        // Add courseCode and courseName from the selected course
+        courseCode: selectedCourse?.courseCode || '',
+        courseName: selectedCourse?.courseName || '',
         // Convert datetime-local strings to proper ISO dates
         activeFrom: testData.activeFrom ? new Date(testData.activeFrom).toISOString() : null,
         activeTo: testData.activeTo ? new Date(testData.activeTo).toISOString() : null
@@ -352,10 +367,16 @@ const CreateTest = () => {
     }
 
     try {
+      // Find the selected course to get courseCode and courseName for Excel import
+      const selectedCourse = courses.find(course => course._id === excelImportData.course);
+      
       const formData = new FormData();
       formData.append('excelFile', excelFile);
       formData.append('duration', excelImportData.duration);
       formData.append('course', excelImportData.course);
+      // Add courseCode and courseName to the form data
+      formData.append('courseCode', selectedCourse?.courseCode || '');
+      formData.append('courseName', selectedCourse?.courseName || '');
       formData.append('subject', JSON.stringify(excelImportData.subject));
       formData.append('testType', excelImportData.testType);
       formData.append('activeFrom', excelImportData.activeFrom);
@@ -383,16 +404,7 @@ const CreateTest = () => {
     }
   };
 
-  const formatDateTimeLocal = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}+05:30`;
-  };
+  // Removed formatDateTimeLocal function as it was causing timezone issues
 
   if (initialLoading) {
     return (
